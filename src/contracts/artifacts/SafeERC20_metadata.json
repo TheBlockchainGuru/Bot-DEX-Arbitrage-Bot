@@ -1,0 +1,40 @@
+{
+	"compiler": {
+		"version": "0.6.7+commit.b8d736ae"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [],
+		"devdoc": {
+			"methods": {}
+		},
+		"userdoc": {
+			"methods": {}
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/FlashLoan.sol": "SafeERC20"
+		},
+		"evmVersion": "istanbul",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/FlashLoan.sol": {
+			"keccak256": "0xccb7fe5ab0533524de2ad00d93e33f169353eb98f2ad3541bbc189ef3651cd1c",
+			"urls": [
+				"bzz-raw://44b157357fcc85195f41ca04818ef85b4c7250547c007ea975721bdb0c5928bd",
+				"dweb:/ipfs/QmekNV1rTvz64wvg6SwGTMug9XVGLqCryhAnjKCRptK5CU"
+			]
+		}
+	},
+	"version": 1
+}
