@@ -21,6 +21,7 @@
     "chai-bignumber": "3.0.0",
     "cors": "^2.8.5",
     "ethereum-input-data-decoder": "^0.3.2",
+    "ethers": "^5.4.7",
     "express": "^4.17.1",
     "firebase": "^8.9.1",
     "geth": "^0.4.0",
