@@ -1,3 +1,6 @@
+
+//SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.6.6;
 
 library Address {
@@ -1238,7 +1241,7 @@ contract FlashloanV1 is FlashLoanReceiverBaseV1 {
     );
     
     
-    address public  loantoken  =  0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address public  loantoken;
     address public  tradetoken;
     address payable public  master;
     uint8   public direction;
@@ -1246,7 +1249,7 @@ contract FlashloanV1 is FlashLoanReceiverBaseV1 {
 
 
 
- function flashloan(uint256  _amount, address _tradetoken, uint8 _direction) public onlyOwner {
+ function flashloan(address  _loantoken, uint256  _amount, address _tradetoken, uint8 _direction) public onlyOwner {
         bytes memory data = "";
         uint amount = _amount * 1000000000000000000;
         tradetoken = _tradetoken;
@@ -1254,7 +1257,6 @@ contract FlashloanV1 is FlashLoanReceiverBaseV1 {
         ILendingPoolV1 lendingPool = ILendingPoolV1(addressesProvider.getLendingPool());
         lendingPool.flashLoan(address(this), loantoken, amount, data);
     }
-
 
     function executeOperation(
         address _reserve,
@@ -1272,11 +1274,13 @@ contract FlashloanV1 is FlashLoanReceiverBaseV1 {
         //
         
         if (direction == 1){
-         address[] memory path = new address[](2);  
-         uint256 amountIna  = address(this).balance;
+         address[] memory path = new address[](3);  
          
-         path[0] = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-         path[1] = tradetoken;
+         uint256 amountIna = IERC20(loantoken).balanceOf(address(this));
+         IERC20(loantoken).approve(uniswap, amountIna);
+         path[0] = loantoken;
+         path[1] = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+         path[2] = tradetoken;
          _uniswapV2Router.swapExactETHForTokens{value: amountIna}(0, path, address(this), block.timestamp+100);
          
 
@@ -1284,26 +1288,34 @@ contract FlashloanV1 is FlashLoanReceiverBaseV1 {
          IERC20(tradetoken).approve(sushiswap, amountInweth);
          path[0] = tradetoken;
          path[1] = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+         path[2] = loantoken;
          _sushiswapRouter.swapExactTokensForETH(amountInweth, 0, path, address(this), block.timestamp + 100);
         }
         
         if (direction == 2){
-             address[] memory path = new address[](2);  
-             uint256 amountIna  = address(this).balance;
-            
-             path[0] = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-             path[1] = tradetoken;
-             _sushiswapRouter.swapExactETHForTokens{value: amountIna}(0, path, address(this), block.timestamp + 100);
-     
+             address[] memory path = new address[](3);  
+         
+             uint256 amountIna = IERC20(loantoken).balanceOf(address(this));
+             IERC20(loantoken).approve(sushiswap, amountIna);
+             path[0] = loantoken;
+             path[1] = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+             path[2] = tradetoken;
+             _sushiswapRouter.swapExactETHForTokens{value: amountIna}(0, path, address(this), block.timestamp+100);
+             
+    
              uint256 amountInweth = IERC20(tradetoken).balanceOf(address(this));
              IERC20(tradetoken).approve(uniswap, amountInweth);
              path[0] = tradetoken;
              path[1] = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+             path[2] = loantoken;
              _uniswapV2Router.swapExactTokensForETH(amountInweth, 0, path, address(this), block.timestamp + 100);
         }
+        
             uint totalDebt = _amount.add(_fee);
             transferFundsBackToPoolInternal(_reserve, totalDebt);
-            sendViaTransfer(master , address(this).balance);
+            uint256 amountProfit = IERC20(loantoken).balanceOf(address(this));
+            IERC20(loantoken).transfer(master, amountProfit);
+            
             
     }
      function sendViaTransfer(address payable _to, uint256 amount) public payable {

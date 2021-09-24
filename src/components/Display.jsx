@@ -13,27 +13,15 @@ import { ethers } from 'ethers';
 
 const smartContractAddress = "";
 
-// const options = {
-//   timeout: 30000,
-//   clientConfig: {
-//       maxReceivedFrameSize:   100000000,
-//       maxReceivedMessageSize: 100000000,
-//   },
-//   reconnect: {
-//       auto: true,
-//       delay: 5000,
-//       maxAttempts: 15,
-//       onTimeout: false,
-//   },
-// };
-// const web3 = new Web3(new Web3.providers.WebsocketProvider('wss://purple-wispy-flower.quiknode.pro/a2ae460515f061ce64f526edcb10eda275f62585/', options));
 const web3    = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"));
 const uniswap_address = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
 const sushi_address = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'
 const Eth_address   = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 
+
 var intervalvar
 class Display extends Component {
+
     constructor(props){
       super(props)
       this.state={
@@ -143,7 +131,17 @@ class Display extends Component {
       });
     }
 
-    async start (){
+    async start(){
+
+      if(autoAmount != this.state.autoAmount){
+        this.setState({
+           tabledatas : []
+        })
+      }
+
+
+      let autoAmount =  this.state.autoAmount;
+
       console.log("loan amount " , this.state.autoAmount)
 
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
@@ -155,28 +153,26 @@ class Display extends Component {
         let uni_buy , uni_sell,sushi_buy, sushi_sell
  
         let mycontract1  = new web3.eth.Contract(abi, uniswap_address)
-        uni_buy       = await mycontract1.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * this.state.autoAmount) + ''), [Eth_address,this.state.tokenAddresses[index]["Address"]]).call();
-        uni_sell      = await mycontract1.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * this.state.autoAmount) + ''), [this.state.tokenAddresses[index]["Address"],Eth_address]).call();
+        uni_buy       = await mycontract1.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + ''), [Eth_address,this.state.tokenAddresses[index]["Address"]]).call();
+        uni_sell      = await mycontract1.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + ''), [this.state.tokenAddresses[index]["Address"],Eth_address]).call();
         
         let mycontract2  = new web3.eth.Contract(abi, sushi_address)
-        sushi_buy      = await mycontract2.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * this.state.autoAmount) + '') ,[Eth_address,this.state.tokenAddresses[index]["Address"]]).call();
-        sushi_sell     = await mycontract2.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * this.state.autoAmount) + '') ,[this.state.tokenAddresses[index]["Address"],Eth_address]).call();
+        sushi_buy      = await mycontract2.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[Eth_address, this.state.tokenAddresses[index]["Address"]]).call();
+        sushi_sell     = await mycontract2.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[this.state.tokenAddresses[index]["Address"],Eth_address]).call();
 
-        uni_buy          = Math.round( uni_buy[1]     / Math.pow(10, tokenDecimal - 3 )) / 1000
-        sushi_buy        = Math.round( sushi_buy[1]   / Math.pow(10, tokenDecimal - 3 )) / 1000
-        uni_sell         = Math.round( uni_sell[0]    / Math.pow(10, tokenDecimal - 3 )) / 1000
-        sushi_sell       = Math.round( sushi_sell[0]  / Math.pow(10, tokenDecimal - 3 )) / 1000
+        uni_buy          = Math.round( uni_buy[1]     / Math.pow(10, tokenDecimal - 5 )) / 100000
+        sushi_buy        = Math.round( sushi_buy[1]   / Math.pow(10, tokenDecimal - 5 )) / 100000
+        uni_sell         = Math.round( uni_sell[0]    / Math.pow(10, tokenDecimal - 5 )) / 100000
+        sushi_sell       = Math.round( sushi_sell[0]  / Math.pow(10, tokenDecimal - 5 )) / 100000
         
       
-        let uni2sushiRate = Math.round((uni_buy-sushi_sell) * 10000/sushi_sell)  /100 
-        let sushi2uniRate = Math.round((sushi_buy-uni_sell) * 10000/uni_sell)    /100
+        let uni2sushiRate = Math.round((uni_buy-sushi_sell) * 100000/sushi_sell)  /1000
+        let sushi2uniRate = Math.round((sushi_buy-uni_sell) * 100000/uni_sell)    /1000
         let uni2sushiRateStyle 
         let sushi2uniRateStyle
 
-
         if (uni2sushiRate >= 0){
            uni2sushiRateStyle     = <a className='text-success'> {uni2sushiRate} </a>
-           
            if(uni2sushiRate > this.state.traderate){
             this.setState({
               tradeTokenAddress : this.state.tokenAddresses[index]["Address"],
@@ -188,12 +184,9 @@ class Display extends Component {
             })
            }
         }
-
         else if (uni2sushiRate < 0){
            uni2sushiRateStyle     = <a className='text-danger'> {uni2sushiRate} </a>
         }
-
-
         if (sushi2uniRate >= 0){
            sushi2uniRateStyle     = <a className='text-success'> {sushi2uniRate} </a>
            if(sushi2uniRate > this.state.traderate){
@@ -207,25 +200,20 @@ class Display extends Component {
             })
            }
         }
-
         else if (sushi2uniRate < 0){
            sushi2uniRateStyle     = <a className='text-danger'> {sushi2uniRate} </a>
         }
-
-
         if (this.state.tradeToken == tokenName){
           if (this.state.direction == 1){
             this.setState({
               traderate : uni2sushiRate
             })
           }
-
           else if(this.state.direction == 2){
             this.setState({
               traderate : sushi2uniRate
             })
           }
-
         }
 
 
@@ -241,6 +229,8 @@ class Display extends Component {
           uni2sushiRateStyle : uni2sushiRateStyle,
           sushi2uniRateStyle : sushi2uniRateStyle
         }
+
+
         let tableDatas = this.state.tableDatas
         tableDatas[index] = tableData
         this.setState({
@@ -248,8 +238,14 @@ class Display extends Component {
         })
 
         }catch(err){
+           let tableDatas = this.state.tableDatas
+            tableDatas[index] = []
+            this.setState({
+              tableDatas : tableDatas
+            })
           console.log(err)
           index  =  index
+          
         }
         if (index ==  this.state.tokenAddresses.length - 1){
           this.start()
@@ -300,7 +296,7 @@ class Display extends Component {
         from : this.state.ownerAddress,
         to   : smartContractAddress,
         data : loanContract.methods.flashloan(this.state.autoAmount, this.state.tradeTokenAddress, this.state.direction).encodeABI(),
-        gasValue : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
+        gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
         gas      : this.state.autoGasLimit,
         nonce    : nonce
       }
@@ -325,7 +321,6 @@ class Display extends Component {
             console.log(e)
         })
     }
-
 
     autoExcute(){
       if (this.state.ownerAddress == '' || this.state.ownerPrivateKey == ''){
@@ -574,7 +569,7 @@ class Display extends Component {
                           <Button variant="primary" id="button-addon2"  onClick={()=>this.getPriceData()}>
                            <BsTable/> Get Price Data
                           </Button>
-                          
+                           
                         </InputGroup>
                         </div>
                         <div className = "col-1"></div>
