@@ -11,17 +11,16 @@ import { GiReceiveMoney } from "react-icons/gi"
 import LoanContract from '../contracts/artifacts/FlashloanV1.json';
 import { ethers } from 'ethers';
 
-const smartContractAddress = "";
-
-const web3    = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"));
-const uniswap_address = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
-const sushi_address = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'
-const Eth_address   = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-
+const smartContractAddress = "0xfD07081eA2AfBd133E8394d6e86cd26487625062";
+const web3                 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"));
+const uniswap_address      = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
+const sushi_address        = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'
+const defiswap_address     = '0xCeB90E4C17d626BE0fACd78b79c9c87d7ca181b3'
+const Eth_address          = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+//kyber_address = 0x1c87257F5e8609940Bc751a07BB085Bb7f8cDBE6
 
 var intervalvar
 class Display extends Component {
-
     constructor(props){
       super(props)
       this.state={
@@ -30,15 +29,14 @@ class Display extends Component {
         uni_sell : 0,
         sushi_buy : 0,
         sushi_sell : 0,
-        uni2sushiRate : 0,
-        sushi2uniRate : 0,
+        defi_buy   : 0,
+        defi_sell  : 0,
+        profit_rate : 0,
         tableDatas : [],
         tableData : [],
-
         // input token
         inputAddress : "",
         tokenAddresses : [],
-
         // trading parameter
         tradeToken : '',
         tradebuyprice : 0,
@@ -59,13 +57,10 @@ class Display extends Component {
         autoGasLimit  : 500000,
         autoGasValue  : '40',
         autoExcuteButtonState : false,
-
         ownerAddress : '',
         ownerPrivateKey : '',
-
         autoModeState : false,
         walletBalance : '',
-
         logs :[],
         contractAddress : ''
       }
@@ -91,7 +86,6 @@ class Display extends Component {
             if (newArray) {
                 Object.keys(newArray).map((key) => {
                     const value = newArray[key];
-
                     walletList.push({
                             Address : web3.utils.toChecksumAddress(value.Address),
                     })
@@ -101,7 +95,6 @@ class Display extends Component {
               tokenAddresses : walletList
             })
         }
-      
     }
 
     async loadLog(){
@@ -132,110 +125,140 @@ class Display extends Component {
     }
 
     async start(){
-
       if(autoAmount != this.state.autoAmount){
         this.setState({
            tabledatas : []
         })
       }
 
-
       let autoAmount =  this.state.autoAmount;
-
       console.log("loan amount " , this.state.autoAmount)
-
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
         console.log(index)
+        let uni_buy , uni_sell,sushi_buy, sushi_sell, defi_buy, defi_sell, max_buy, max_sell, profit_rate, profit_rate_style, firstDex, secondDex, tokenName, tokenDecimal, max_buy_style, max_sell_style
+
       try{
-        let tokenContract= new web3.eth.Contract(erc20abi,this.state.tokenAddresses[index]["Address"]);
-        let tokenName    = await tokenContract.methods.symbol().call().then(function(res) {  return res;  })
-        let tokenDecimal = await tokenContract.methods.decimals().call()
-        let uni_buy , uni_sell,sushi_buy, sushi_sell
- 
-        let mycontract1  = new web3.eth.Contract(abi, uniswap_address)
-        uni_buy       = await mycontract1.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + ''), [Eth_address,this.state.tokenAddresses[index]["Address"]]).call();
-        uni_sell      = await mycontract1.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + ''), [this.state.tokenAddresses[index]["Address"],Eth_address]).call();
-        
-        let mycontract2  = new web3.eth.Contract(abi, sushi_address)
-        sushi_buy      = await mycontract2.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[Eth_address, this.state.tokenAddresses[index]["Address"]]).call();
-        sushi_sell     = await mycontract2.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[this.state.tokenAddresses[index]["Address"],Eth_address]).call();
 
-        uni_buy          = Math.round( uni_buy[1]     / Math.pow(10, tokenDecimal - 5 )) / 100000
-        sushi_buy        = Math.round( sushi_buy[1]   / Math.pow(10, tokenDecimal - 5 )) / 100000
-        uni_sell         = Math.round( uni_sell[0]    / Math.pow(10, tokenDecimal - 5 )) / 100000
-        sushi_sell       = Math.round( sushi_sell[0]  / Math.pow(10, tokenDecimal - 5 )) / 100000
+        try{
+          let tokenContract= new web3.eth.Contract(erc20abi,this.state.tokenAddresses[index]["Address"]);
+          tokenName    = await tokenContract.methods.symbol().call().then(function(res) {  return res;  })
+          tokenDecimal = await tokenContract.methods.decimals().call()
+        }catch(err){}
         
-      
-        let uni2sushiRate = Math.round((uni_buy-sushi_sell) * 100000/sushi_sell)  /1000
-        let sushi2uniRate = Math.round((sushi_buy-uni_sell) * 100000/uni_sell)    /1000
-        let uni2sushiRateStyle 
-        let sushi2uniRateStyle
+        
+        try{
+          let mycontract1  = new web3.eth.Contract(abi, uniswap_address)
+          uni_buy       = await mycontract1.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + ''), [Eth_address,this.state.tokenAddresses[index]["Address"]]).call();
+          uni_sell      = await mycontract1.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + ''), [this.state.tokenAddresses[index]["Address"],Eth_address]).call();
+          uni_buy          = Math.round( uni_buy[1]     / Math.pow(10, tokenDecimal - 5 )) / 100000
+          uni_sell         = Math.round( uni_sell[0]    / Math.pow(10, tokenDecimal - 5 )) / 100000
+        }catch(err){
+          uni_buy = 0
+          uni_sell = 0
+        }
+        try{
+          let mycontract2  = new web3.eth.Contract(abi, sushi_address)
+          sushi_buy      = await mycontract2.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[Eth_address, this.state.tokenAddresses[index]["Address"]]).call();
+          sushi_sell     = await mycontract2.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[this.state.tokenAddresses[index]["Address"],Eth_address]).call();
+          sushi_buy        = Math.round( sushi_buy[1]   / Math.pow(10, tokenDecimal - 5 )) / 100000
+          sushi_sell       = Math.round( sushi_sell[0]  / Math.pow(10, tokenDecimal - 5 )) / 100000
+        }catch(err){
+          sushi_buy =0
+          sushi_sell =0
+        }
 
-        if (uni2sushiRate >= 0){
-           uni2sushiRateStyle     = <a className='text-success'> {uni2sushiRate} </a>
-           if(uni2sushiRate > this.state.traderate){
+        try{
+          let mycontract3  = new web3.eth.Contract(abi, defiswap_address)
+          defi_buy      = await mycontract3.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[Eth_address, this.state.tokenAddresses[index]["Address"]]).call();
+          defi_sell     = await mycontract3.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[this.state.tokenAddresses[index]["Address"],Eth_address]).call();
+          defi_buy         = Math.round( defi_buy[1]    / Math.pow(10, tokenDecimal - 5 )) / 100000
+          defi_sell        = Math.round( defi_sell[0]   / Math.pow(10, tokenDecimal - 5 )) / 100000
+        }catch(err){
+          defi_buy = 0
+          defi_sell = 0
+        }
+        let point = [uni_sell, sushi_sell, defi_sell]
+        
+        point.sort(function(a, b){return a-b});
+        if (point[0] == 0){
+          if (point[1] == 0){
+            max_sell = point[2]
+          }
+          else{
+            max_sell =point[1]
+          }
+        }
+        else{
+          max_sell = point[0]
+        }
+
+
+        max_buy = Math.max.apply(null,[uni_buy,sushi_buy, defi_buy])
+        profit_rate =  Math.round((max_buy - max_sell)/max_buy * 1000000) / 10000
+
+        if (max_buy == uni_buy ){
+          firstDex = uniswap_address;
+        }
+
+        else if (max_buy == sushi_buy){
+          firstDex = sushi_address
+        }
+        
+        else {
+          firstDex = defiswap_address
+        }
+
+        max_sell= Math.min.apply(null,[uni_sell,sushi_sell,defi_sell]) 
+        if (max_sell == uni_sell ){
+          secondDex = uniswap_address;
+        }
+        else if (max_sell == sushi_sell){
+          secondDex = sushi_address
+        }
+        else {
+          secondDex = defiswap_address
+        }
+        
+
+
+        if (profit_rate > 0  ){
+          profit_rate_style =  <a className='text-success'> {profit_rate} </a>
+          if (this.state.traderate < profit_rate){
             this.setState({
               tradeTokenAddress : this.state.tokenAddresses[index]["Address"],
               tradeToken : tokenName,
-              tradebuyprice : uni_buy,
-              tradesellprice : sushi_sell,
-              traderate : uni2sushiRate,
-              direction : 1
-            })
-           }
-        }
-        else if (uni2sushiRate < 0){
-           uni2sushiRateStyle     = <a className='text-danger'> {uni2sushiRate} </a>
-        }
-        if (sushi2uniRate >= 0){
-           sushi2uniRateStyle     = <a className='text-success'> {sushi2uniRate} </a>
-           if(sushi2uniRate > this.state.traderate){
-            this.setState({
-              tradeTokenAddress : this.state.tokenAddresses[index]["Address"],
-              tradeToken : tokenName,
-              tradebuyprice : sushi_buy,
-              tradesellprice : uni_sell,
-              traderate : sushi2uniRate,
-              direction : 2
-            })
-           }
-        }
-        else if (sushi2uniRate < 0){
-           sushi2uniRateStyle     = <a className='text-danger'> {sushi2uniRate} </a>
-        }
-        if (this.state.tradeToken == tokenName){
-          if (this.state.direction == 1){
-            this.setState({
-              traderate : uni2sushiRate
-            })
-          }
-          else if(this.state.direction == 2){
-            this.setState({
-              traderate : sushi2uniRate
+              tradebuyprice : max_buy,
+              tradesellprice : max_sell,
+              traderate : profit_rate,
+              firstDex : firstDex,
+              secondDex: secondDex
             })
           }
         }
-
+        else if (profit_rate <= 0){
+          profit_rate_style =  <a className='text-danger'> {profit_rate} </a>
+        }
+        
 
         let tableData = {
           tokenName     : tokenName,
           tokenDecimal  : tokenDecimal,
-          uni_buy      : uni_buy,
+          uni_buy       : uni_buy,
           uni_sell      : uni_sell,
-          sushi_buy    : sushi_buy,
+          sushi_buy     : sushi_buy,
           sushi_sell    : sushi_sell,
-          uni2sushiRate : uni2sushiRate ,
-          sushi2uniRate : sushi2uniRate ,
-          uni2sushiRateStyle : uni2sushiRateStyle,
-          sushi2uniRateStyle : sushi2uniRateStyle
+          defi_buy      : defi_buy,
+          defi_sell     : defi_sell,
+          profit_rate   : profit_rate,
+          profit_rate_style : profit_rate_style, 
         }
-
 
         let tableDatas = this.state.tableDatas
         tableDatas[index] = tableData
         this.setState({
           tableDatas : tableDatas
         })
+
 
         }catch(err){
            let tableDatas = this.state.tableDatas
@@ -370,11 +393,7 @@ class Display extends Component {
       console.log("stop excute")
       clearInterval(intervalvar)
     }
-
-    async sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-  
+ 
     render() {
         var rowstable = this.state.tableDatas
         const datatable = {
@@ -388,25 +407,34 @@ class Display extends Component {
                 field : 'uni_buy',
             },
             {
-                label : 'Sushi Sell Amount',
-                field : 'sushi_sell',
+              label : 'Sushi Buy Amount',
+              field : 'sushi_buy',
             },
             {
-                label : 'Profit Rate',
-                field : 'uni2sushiRateStyle',
+              label : 'Defi Buy Amount',
+              field : 'defi_buy',
             },
             {
-                label : 'Sushi Buy Amount',
-                field : 'sushi_buy',
+              label : 'Uni Sell Amount',
+              field : 'uni_sell',
             },
             {
-                label : 'Uni Sell Amount',
-                field : 'uni_sell',
+              label : 'Sushi Sell Amount',
+              field : 'sushi_sell',
             },
             {
-                label : 'Profit Rate',
-                field : 'sushi2uniRateStyle',
+              label : 'Defi Sell Amount',
+              field : 'defi_sell',
             },
+            {
+              label : 'Profit Rate',
+              field : 'profit_rate_style',
+            },
+
+
+
+
+
           ],
           rows : rowstable,
         }
@@ -454,13 +482,6 @@ class Display extends Component {
             inputAddress : addLabel
           })
           console.log(this.state.inputAddress)
-        }
-
-        const handleLoanAmount = (e) => {
-          let addLabel  = e.target.value
-          this.setState({
-            loanAmount : addLabel
-          })
         }
 
         const handleAutoProfit = (e) => {
@@ -519,16 +540,7 @@ class Display extends Component {
             ownerPrivateKey : addLabel
           }) 
         }       
-        
-        const handleContractAddress = (e) => {
-          let addLabel  = e.target.value
-          this.setState({
-            contractAddress : addLabel
-          }) 
-        }
-
-        
-
+      
         return (
           <div>
             
