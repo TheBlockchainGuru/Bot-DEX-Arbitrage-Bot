@@ -126,6 +126,7 @@ class Display extends Component {
       });
     }
 
+
     async start(){
       if(autoAmount != this.state.autoAmount){
         this.setState({
@@ -179,25 +180,9 @@ class Display extends Component {
           defi_buy = 0
           defi_sell = 0
         }
-        let point = [uni_sell, sushi_sell, defi_sell]
-        
-        point.sort(function(a, b){return a-b});
-        if (point[0] == 0){
-          if (point[1] == 0){
-            max_sell = point[2]
-          }
-          else{
-            max_sell =point[1]
-          }
-        }
-        else{
-          max_sell = point[0]
-        }
-
 
         max_buy = Math.max.apply(null,[uni_buy,sushi_buy, defi_buy])
-        profit_rate =  Math.round((max_buy - max_sell)/max_buy * 1000000) / 10000
-
+        
         if (max_buy == uni_buy ){
           firstDex = uniswap_address;
         }
@@ -211,6 +196,7 @@ class Display extends Component {
         }
 
         max_sell= Math.min.apply(null,[uni_sell,sushi_sell,defi_sell]) 
+
         if (max_sell == uni_sell ){
           secondDex = uniswap_address;
         }
@@ -220,10 +206,11 @@ class Display extends Component {
         else {
           secondDex = defiswap_address
         }
-        
+
+        profit_rate =  Math.round((max_buy - max_sell)/max_buy * 1000000) / 10000
 
 
-        if (profit_rate > 0  ){
+        if (profit_rate > 0 ){
           profit_rate_style =  <a className='text-success'> {profit_rate} </a>
           if (this.state.traderate < profit_rate){
             this.setState({
@@ -239,6 +226,18 @@ class Display extends Component {
         }
         else if (profit_rate <= 0){
           profit_rate_style =  <a className='text-danger'> {profit_rate} </a>
+        }
+
+        if (this.state.tradeToken == this.state.tokenAddresses[index]["Address"] ){
+          this.setState({
+            tradeTokenAddress : this.state.tokenAddresses[index]["Address"],
+            tradeToken : tokenName,
+            tradebuyprice : max_buy,
+            tradesellprice : max_sell,
+            traderate : profit_rate,
+            firstDex : firstDex,
+            secondDex: secondDex
+          })
         }
         let tableData = {
           tokenName     : tokenName,
@@ -311,12 +310,12 @@ class Display extends Component {
         console.log("error : there is no enought eth value for trading")
       }
       else {
-        console.log("start with :",this.state.tradeToken, this.state.autoAmount, this.state.firstDex, this.state.secondDex)
+        console.log("start with :",this.state.tradeToken,this.state.tradeTokenAddress, this.state.autoAmount, this.state.firstDex, this.state.secondDex)
       let firstDexContract   = await web3.eth.Contract(abi, this.state.firstDex);
       let tx = {
         from : this.state.ownerAddress,
         to   : this.state.firstDex,
-        data : firstDexContract.methods.swapExactETHForTokens(0, [Eth_address, this.state.tradeToken],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
+        data : firstDexContract.methods.swapExactETHForTokens(0, [Eth_address, this.state.tradeTokenAddress],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
         gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
         gas      : this.state.autoGasLimit,
         nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
@@ -325,12 +324,12 @@ class Display extends Component {
         const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
         await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
           let secondDexContract   = await  web3.eth.Contract(abi, this.state.secondDex);
-          let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeToken);
+          let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeTokenAddress);
           let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress);
           let tx = {
             from : this.state.ownerAddress,
             to   : this.state.secondDex,
-            data : secondDexContract.methods.swapExactTokensForETH(await ethers.BigNumber.from((tokenBalance)+''),0, [this.state.tradeToken,Eth_address ],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
+            data : secondDexContract.methods.swapExactTokensForETH(await ethers.BigNumber.from((tokenBalance)+''),0, [this.state.tradeTokenAddress,Eth_address ],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
             gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
             gas      : this.state.autoGasLimit,
             nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
