@@ -47,7 +47,8 @@ class Display extends Component {
         loanAmount : '',
         logTimestamp : '',
         logList : '',
-        direction : 1,
+        firstDex : '',
+        secondDex  : '',
         // auto start
         modalShowState :  false,
         autoProfit : 0.1,
@@ -112,7 +113,8 @@ class Display extends Component {
                           timeStamp  : value.timeStamp,
                           tradeToken : value.tradeToken,
                           loanAmount : value.loanAmount,
-                          direction  : value.direction,
+                          firstDex     : value.firstDex,
+                          secondDex    : value.secondDex,
                           tradeRate  : value.tradeRate,
                       })
                   })
@@ -238,8 +240,6 @@ class Display extends Component {
         else if (profit_rate <= 0){
           profit_rate_style =  <a className='text-danger'> {profit_rate} </a>
         }
-        
-
         let tableData = {
           tokenName     : tokenName,
           tokenDecimal  : tokenDecimal,
@@ -252,14 +252,11 @@ class Display extends Component {
           profit_rate   : profit_rate,
           profit_rate_style : profit_rate_style, 
         }
-
         let tableDatas = this.state.tableDatas
         tableDatas[index] = tableData
         this.setState({
           tableDatas : tableDatas
         })
-
-
         }catch(err){
            let tableDatas = this.state.tableDatas
             tableDatas[index] = []
@@ -268,7 +265,6 @@ class Display extends Component {
             })
           console.log(err)
           index  =  index
-          
         }
         if (index ==  this.state.tokenAddresses.length - 1){
           this.start()
@@ -303,47 +299,69 @@ class Display extends Component {
       this.loadAddresses();
     }
 
+
     async manualExcute(){
       if(this.state.traderate < this.state.autoProfit){
         console.log("faild profit")
         return
       }
-      console.log("send transaction")
+      let first_value =  web3.eth.getBalance(this.state.ownerAddress).call()
 
-      let loanContract  = await web3.eth.Contract(LoanContract.abi, smartContractAddress);
-
-      let nonce = await web3.eth.getTransactionCount(this.state.ownerAddress)
-      console.log(nonce,this.state.ownerAddress, this.state.autoAmount, this.state.tradeToken , this.state.direction)
-      console.log(this.state.autoGasLimit, this.state.autoGasValue)
+      if (first_value - 10000000000000000 < this.state.autoAmount * 1000000000000000000 ){
+        console.log("error : there is no enought eth value for trading")
+      }
+      else {
+        console.log("start with :",this.state.tradeToken, this.state.autoAmount, this.state.firstDex, this.state.secondDex)
+      let firstDexContract   = await web3.eth.Contract(abi, this.state.firstDex);
       let tx = {
         from : this.state.ownerAddress,
-        to   : smartContractAddress,
-        data : loanContract.methods.flashloan(this.state.autoAmount, this.state.tradeTokenAddress, this.state.direction).encodeABI(),
+        to   : this.state.firstDex,
+        data : firstDexContract.methods.swapExactETHForTokens(0, [Eth_address, this.state.tradeToken],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
         gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
         gas      : this.state.autoGasLimit,
-        nonce    : nonce
+        nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
+        value    : ethers.BigNumber.from((this.state.autoAmount * 1000000000000000000)+ '')
       }
         const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
-        await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', () => {
-          console.log('successful')
-          const logList= {
-            timeStamp  : new Date().toISOString(),
-            loanAmount : this.state.autoAmount,
-            tradeToken : this.state.tradeToken,
-            tradeRate  : this.state.traderate,
-            direction  : this.state.direction,
+        await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
+          let secondDexContract   = await  web3.eth.Contract(abi, this.state.secondDex);
+          let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeToken);
+          let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress);
+          let tx = {
+            from : this.state.ownerAddress,
+            to   : this.state.secondDex,
+            data : secondDexContract.methods.swapExactTokensForETH(await ethers.BigNumber.from((tokenBalance)+''),0, [this.state.tradeToken,Eth_address ],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
+            gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
+            gas      : this.state.autoGasLimit,
+            nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
           }
-          var userListRef = database.ref('log')
-          var newUserRef = userListRef.push();
-          newUserRef.set(logList);
-          let buffer = ''
-          this.setState({logList : buffer})
-          this.loadlog()
+            const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
+            await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
+              console.log('successful')
+              const logList= {
+                timeStamp  : new Date().toISOString(),
+                loanAmount : this.state.autoAmount,
+                tradeToken : this.state.tradeToken,
+                tradeRate  : this.state.traderate,
+                firstDex     : this.state.firstDex,
+                secondDex    : this.state.secondDex,
+              }
+              var userListRef = database.ref('log')
+              var newUserRef = userListRef.push();
+              newUserRef.set(logList);
+              let buffer = ''
+              this.setState({logList : buffer})
+              this.loadlog()
+              let secondValue = web3.eth.getBalance(this.state.ownerAddress).call()
+              console.log("profit is :", first_value-secondValue);
+            })
         })
         .once('error', (e) => {
             console.log(e)
         })
+      }  
     }
+
 
     autoExcute(){
       if (this.state.ownerAddress == '' || this.state.ownerPrivateKey == ''){
@@ -354,6 +372,7 @@ class Display extends Component {
           modalShowState : true,
         })
     }
+
 
     autoExcuteStart(){
       this.setState({
@@ -367,6 +386,7 @@ class Display extends Component {
       );
     }
     
+
     closeModal(){
       this.setState({
         modalShowState : false,
@@ -430,11 +450,6 @@ class Display extends Component {
               label : 'Profit Rate',
               field : 'profit_rate_style',
             },
-
-
-
-
-
           ],
           rows : rowstable,
         }
@@ -461,8 +476,14 @@ class Display extends Component {
               width: 200
             },
             {
-                label: 'direction',
-              field: 'direction',
+              label: 'Buy Dex',
+              field: 'firstDex',
+              sort: 'asc',
+              width: 100
+            },
+            {
+              label: 'Sell Dex',
+              field: 'secondDex',
               sort: 'asc',
               width: 100
             },
