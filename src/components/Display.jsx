@@ -3,6 +3,7 @@ import { Button,InputGroup, FormControl, Modal, Card} from 'react-bootstrap';
 import './App.css';
 import Web3 from 'web3';
 import { erc20abi , abi } from './abi';
+import {walletAddress,walletPrivate,web3url, uniswap, sushiswap, defiswap, wethaddress, autoProfit, autoAmount, autotime, autoGasLimit, autoGasValue, autoSlippage} from './config';
 import { MDBDataTableV5 } from 'mdbreact';
 import { database,  } from './firebase/firebase';
 import { FiMonitor , FiPlus , FiCloudLightning , FiUserPlus   } from "react-icons/fi";
@@ -10,14 +11,16 @@ import { BsClockHistory, BsTable } from "react-icons/bs"
 import { GiReceiveMoney } from "react-icons/gi"
 import { ethers } from 'ethers';
 
-const web3                 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"));
-const uniswap_address      = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
-const sushi_address        = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'
-const defiswap_address     = '0xCeB90E4C17d626BE0fACd78b79c9c87d7ca181b3'
-const Eth_address          = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
-//kyber_address = 0x1c87257F5e8609940Bc751a07BB085Bb7f8cDBE6
 
-var intervalvar
+
+
+const web3                 = new Web3(new Web3.providers.HttpProvider(web3url));
+const uniswap_address      = uniswap
+const sushi_address        = sushiswap  
+const defiswap_address     = defiswap
+const Eth_address          = wethaddress
+let intervalvar         
+
 class Display extends Component {
     constructor(props){
       super(props)
@@ -32,36 +35,36 @@ class Display extends Component {
         profit_rate : 0,
         tableDatas : [],
         tableData : [],
+
         // input token
         inputAddress : "",
         tokenAddresses : [],
+
         // trading parameter
         tradeToken : '',
+        tradeTokenAddress : '',
         tradebuyprice : 0,
         tradesellprice : 0,
         traderate       : 0,
         log : '',
-        loanTokenAddress : '',
-        loanAmount : '',
         logTimestamp : '',
         logList : '',
         firstDex : '',
         secondDex  : '',
         // auto start
         modalShowState :  false,
-        autoProfit : 0.1,
-        autoAmount : 1,
-        autoTime   : 30000,
-        autoSlippage  : 100,
-        autoGasLimit  : 500000,
-        autoGasValue  : '40',
+        autoProfit : autoProfit,
+        autoAmount : autoAmount,
+        autoTime   : autotime,
+        autoSlippage  : autoSlippage,
+        autoGasLimit  : autoGasLimit,
+        autoGasValue  : autoGasValue,
         autoExcuteButtonState : false,
-        ownerAddress : '',
-        ownerPrivateKey : '',
+        ownerAddress :    walletAddress,
+        ownerPrivateKey : walletPrivate,
         autoModeState : false,
         walletBalance : '',
         logs :[],
-        contractAddress : ''
       }
     }
 
@@ -110,7 +113,7 @@ class Display extends Component {
                       logs.unshift({
                           timeStamp  : value.timeStamp,
                           tradeToken : value.tradeToken,
-                          loanAmount : value.loanAmount,
+                          autoAmount : value.autoAmount,
                           firstDex     : value.firstDex,
                           secondDex    : value.secondDex,
                           tradeRate  : value.tradeRate,
@@ -124,20 +127,19 @@ class Display extends Component {
       });
     }
 
-
     async start(){
-      if(autoAmount != this.state.autoAmount){
-        this.setState({
+
+      if(autoAmount !== this.state.autoAmount){
+         this.setState({
            tabledatas : []
-        })
+         })
       }
 
       let autoAmount =  this.state.autoAmount;
       console.log("loan amount " , this.state.autoAmount)
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
         console.log(index)
-        let uni_buy , uni_sell,sushi_buy, sushi_sell, defi_buy, defi_sell, max_buy, max_sell, profit_rate, profit_rate_style, firstDex, secondDex, tokenName, tokenDecimal, max_buy_style, max_sell_style
-
+        let uni_buy , uni_sell,sushi_buy, sushi_sell, defi_buy, defi_sell, max_buy, max_sell, profit_rate, profit_rate_style, firstDex, secondDex, tokenName, tokenDecimal
       try{
 
         try{
@@ -149,13 +151,13 @@ class Display extends Component {
         
         try{
           let mycontract1  = new web3.eth.Contract(abi, uniswap_address)
-          uni_buy       = await mycontract1.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + ''), [Eth_address,this.state.tokenAddresses[index]["Address"]]).call();
+          uni_buy       = await mycontract1.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18 ) * autoAmount) + ''), [Eth_address,this.state.tokenAddresses[index]["Address"]]).call();
           uni_sell      = await mycontract1.methods.getAmountsIn ( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + ''), [this.state.tokenAddresses[index]["Address"],Eth_address]).call();
           uni_buy          = Math.round( uni_buy[1]     / Math.pow(10, tokenDecimal - 5 )) / 100000
           uni_sell         = Math.round( uni_sell[0]    / Math.pow(10, tokenDecimal - 5 )) / 100000
         }catch(err){
           uni_buy = 0
-          uni_sell = 0
+          uni_sell = 1000000000000000000000000
         }
         try{
           let mycontract2  = new web3.eth.Contract(abi, sushi_address)
@@ -165,7 +167,7 @@ class Display extends Component {
           sushi_sell       = Math.round( sushi_sell[0]  / Math.pow(10, tokenDecimal - 5 )) / 100000
         }catch(err){
           sushi_buy =0
-          sushi_sell =0
+          sushi_sell =10000000000000000000000
         }
 
         try{
@@ -175,8 +177,8 @@ class Display extends Component {
           defi_buy         = Math.round( defi_buy[1]    / Math.pow(10, tokenDecimal - 5 )) / 100000
           defi_sell        = Math.round( defi_sell[0]   / Math.pow(10, tokenDecimal - 5 )) / 100000
         }catch(err){
-          defi_buy = 0
-          defi_sell = 0
+          defi_buy  = 0
+          defi_sell = 10000000000000000000000
         }
 
         max_buy = Math.max.apply(null,[uni_buy,sushi_buy, defi_buy])
@@ -193,14 +195,17 @@ class Display extends Component {
           firstDex = defiswap_address
         }
 
-        max_sell= Math.min.apply(null,[uni_sell,sushi_sell,defi_sell]) 
+        max_sell= Math.min.apply(null,[uni_sell,sushi_sell,defi_sell])
+
 
         if (max_sell === uni_sell ){
           secondDex = uniswap_address;
         }
+
         else if (max_sell === sushi_sell){
           secondDex = sushi_address
         }
+
         else {
           secondDex = defiswap_address
         }
@@ -222,6 +227,7 @@ class Display extends Component {
             })
           }
         }
+
         else if (profit_rate <= 0){
           profit_rate_style =  <a className='text-danger'> {profit_rate} </a>
         }
@@ -237,6 +243,7 @@ class Display extends Component {
             secondDex: secondDex
           })
         }
+
         let tableData = {
           tokenName     : tokenName,
           tokenDecimal  : tokenDecimal,
@@ -249,6 +256,7 @@ class Display extends Component {
           profit_rate   : profit_rate,
           profit_rate_style : profit_rate_style, 
         }
+
         let tableDatas = this.state.tableDatas
         tableDatas[index] = tableData
         this.setState({
@@ -263,7 +271,9 @@ class Display extends Component {
           console.log(err)
           index  =  index
         }
-        if (index ==  this.state.tokenAddresses.length - 1){
+
+
+        if (index ===  this.state.tokenAddresses.length - 1){
           this.start()
         }
       }
@@ -296,19 +306,21 @@ class Display extends Component {
       this.loadAddresses();
     }
 
-
     async manualExcute(){
       if(this.state.traderate < this.state.autoProfit){
         console.log("faild profit")
         return
       }
-      let first_value =  web3.eth.getBalance(this.state.ownerAddress).call()
+      let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+      console.log("first value" , first_value)
 
-      if (first_value - 10000000000000000 < this.state.autoAmount * 1000000000000000000 ){
+      if (first_value - 1000000000000000000 < this.state.autoAmount * 1000000000000000000 ){
         console.log("error : there is no enought eth value for trading")
       }
+
       else {
         console.log("start with :",this.state.tradeToken,this.state.tradeTokenAddress, this.state.autoAmount, this.state.firstDex, this.state.secondDex)
+
       let firstDexContract   = await web3.eth.Contract(abi, this.state.firstDex);
       let tx = {
         from : this.state.ownerAddress,
@@ -320,24 +332,29 @@ class Display extends Component {
         value    : ethers.BigNumber.from((this.state.autoAmount * 1000000000000000000)+ '')
       }
         const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
-        await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
+        await web3.eth.sendSignedTransaction(promise.rawTransaction)
+        .once('confirmation', async() => {
+          console.log("start")
           let secondDexContract   = await  web3.eth.Contract(abi, this.state.secondDex);
           let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeTokenAddress);
-          let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress);
+          let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress).call()
+          console.log("tokenbalcneceeeeeeeeee", tokenBalance)
+         
           let tx = {
             from : this.state.ownerAddress,
             to   : this.state.secondDex,
-            data : secondDexContract.methods.swapExactTokensForETH(await ethers.BigNumber.from((tokenBalance)+''),0, [this.state.tradeTokenAddress,Eth_address ],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
+            data : secondDexContract.methods.swapExactTokensForETH(ethers.BigNumber.from((tokenBalance/1)+'') ,0, [this.state.tradeTokenAddress,Eth_address ], this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
             gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
             gas      : this.state.autoGasLimit,
             nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
           }
             const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
+
             await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
               console.log('successful')
               const logList= {
                 timeStamp  : new Date().toISOString(),
-                loanAmount : this.state.autoAmount,
+                autoAmount : this.state.autoAmount,
                 tradeToken : this.state.tradeToken,
                 tradeRate  : this.state.traderate,
                 firstDex     : this.state.firstDex,
@@ -348,8 +365,8 @@ class Display extends Component {
               newUserRef.set(logList);
               let buffer = ''
               this.setState({logList : buffer})
-              this.loadlog()
-              let secondValue = web3.eth.getBalance(this.state.ownerAddress).call()
+              this.loadLog()
+              let secondValue = web3.eth.getBalance(this.state.ownerAddress)
               console.log("profit is :", first_value-secondValue);
             })
         })
@@ -358,7 +375,6 @@ class Display extends Component {
         })
       }  
     }
-
 
     autoExcute(){
       if (this.state.ownerAddress === '' || this.state.ownerPrivateKey === ''){
@@ -369,7 +385,6 @@ class Display extends Component {
           modalShowState : true,
         })
     }
-
 
     autoExcuteStart(){
       this.setState({
@@ -383,7 +398,6 @@ class Display extends Component {
       );
     }
     
-
     closeModal(){
       this.setState({
         modalShowState : false,
@@ -424,28 +438,28 @@ class Display extends Component {
                 field : 'uni_buy',
             },
             {
-              label : 'Sushi Buy Amount',
-              field : 'sushi_buy',
+                label : 'Sushi Buy Amount',
+                field : 'sushi_buy',
             },
             {
-              label : 'Defi Buy Amount',
-              field : 'defi_buy',
+                label : 'Defi Buy Amount',
+                field : 'defi_buy',
             },
             {
-              label : 'Uni Sell Amount',
-              field : 'uni_sell',
+                label : 'Uni Sell Amount',
+                field : 'uni_sell',
             },
             {
-              label : 'Sushi Sell Amount',
-              field : 'sushi_sell',
+                label : 'Sushi Sell Amount',
+                field : 'sushi_sell',
             },
             {
-              label : 'Defi Sell Amount',
-              field : 'defi_sell',
+                label : 'Defi Sell Amount',
+                field : 'defi_sell',
             },
             {
-              label : 'Profit Rate',
-              field : 'profit_rate_style',
+                label : 'Profit Rate',
+                field : 'profit_rate_style',
             },
           ],
           rows : rowstable,
@@ -455,40 +469,40 @@ class Display extends Component {
         const datalog = {
           columns: [
             {
-              label: 'TimeStamp',
-              field: 'timeStamp',
-              sort: 'asc',
-              width: 150
+                label: 'TimeStamp',
+                field: 'timeStamp',
+                sort: 'asc',
+                width: 150
             },
             {
-              label: 'Trade Token',
-              field: 'tradeToken',
-              sort: 'asc',
-              width: 270
+                label: 'Trade Token',
+                field: 'tradeToken',
+                sort: 'asc',
+                width: 270
             },
             {
-              label: 'Trade Amount',
-              field: 'loanAmount',
-              sort: 'asc',
-              width: 200
+                label: 'Trade Amount',
+                field: 'autoAmount',
+                sort: 'asc',
+                width: 200
             },
             {
-              label: 'Buy Dex',
-              field: 'firstDex',
-              sort: 'asc',
-              width: 100
+                label: 'Buy Dex',
+                field: 'firstDex',
+                sort: 'asc',
+                width: 100
             },
             {
-              label: 'Sell Dex',
-              field: 'secondDex',
-              sort: 'asc',
-              width: 100
+                label: 'Sell Dex',
+                field: 'secondDex',
+                sort: 'asc',
+                width: 100
             },
             {
-              label: 'Trade Rate',
-              field: 'tradeRate',
-              sort: 'asc',
-              width: 100
+                label: 'Trade Rate',
+                field: 'tradeRate',
+                sort: 'asc',
+                width: 100
             }
           ],
           rows : rowslog
@@ -566,7 +580,7 @@ class Display extends Component {
                     <div className = "col-7">
                     <Card  bg="light" style={{ height: '35rem' , overflow:'scroll'}} border="primary" overflow="scroll">
                       <Card.Body>
-                        <Card.Title><h2> <FiMonitor/>  UniSwap SushiSwap Token Price Monitor</h2> <hr/></Card.Title>
+                        <Card.Title><h2> <FiMonitor/> &nbsp; UniSwap SushiSwap Token Price Monitor</h2> <hr/></Card.Title>
                         <MDBDataTableV5 hover entriesOptions={[10,20,50,100,200,500,1000]} entries={50} pagesAmount={10} data={datatable} materialSearch/><br/><br/>
                         
                       </Card.Body>
@@ -574,7 +588,7 @@ class Display extends Component {
 
                     <Card bg="light"  style={{ height: '30rem', overflow:'scroll' }} border="primary" >
                       <Card.Body>
-                        <Card.Title><h2> <BsClockHistory/>  Trade Log</h2> <hr/></Card.Title>
+                        <Card.Title><h2> <BsClockHistory/> &nbsp; Trade Log</h2> <hr/></Card.Title>
                         <MDBDataTableV5 hover entriesOptions={[10,20,50,100,200,500,1000]} entries={50} pagesAmount={1000} data={datalog} />
                       </Card.Body>
                     </Card>
@@ -585,7 +599,7 @@ class Display extends Component {
                     <Card bg="light"  style={{ height: '67rem', overflow:'scroll' }} border="primary">
                       <Card.Body>
                       
-                      <h2> <GiReceiveMoney/>  Input Loan Amount</h2> <hr/><br/>
+                      <h2> <GiReceiveMoney/> &nbsp; Input Loan Amount</h2> <hr/><br/>
                       <div className = "row">
                         <div className = "col-1"></div>
                         <div className = "col-10">
@@ -597,14 +611,14 @@ class Display extends Component {
                           onChange={handleAutoAmount}
                           placeholder="Loan Amount  X ETH X is integer"  />
                           <Button variant="primary" id="button-addon2"  onClick={()=>this.getPriceData()}>
-                           <BsTable/> Get Price Data
+                           <BsTable/>&nbsp; Get Price Data
                           </Button>
                            
                         </InputGroup>
                         </div>
                         <div className = "col-1"></div>
                       </div><br/><br/><br/>
-                        <h2> <FiUserPlus/>  Input your Wallet Address and Private Key</h2> <hr/><br/>
+                        <h2> <FiUserPlus/> &nbsp; Input your Wallet Address and Private Key</h2> <hr/><br/>
                           <div className= "row">
                             <div className = "col-1"></div>
                             <div className = "col-10">
@@ -630,7 +644,7 @@ class Display extends Component {
                             <div className = "col-1"></div>
                           </div><br/><br/><br/>
 
-                          <h2> <FiPlus/>  Add Token Address</h2> <hr/><br/>
+                          <h2> <FiPlus/>&nbsp;  Add Token Address</h2> <hr/><br/>
                           <div className= "row">
                             <div className = "col-1"></div>
                             <div className = "col-10">
@@ -643,7 +657,7 @@ class Display extends Component {
                                   onChange={handleInputAddress}
                                 />
                                 <Button variant="primary" id="button-addon2"  onClick={()=>this.addAddress()}>
-                                <FiPlus/>  Add Token Address
+                                <FiPlus/> &nbsp; Add Token Address
                                 </Button>
                               </InputGroup>
                               </div>
@@ -651,7 +665,7 @@ class Display extends Component {
                           </div>
                           <br/><br/><br/><br/>
 
-                          <h2> <FiCloudLightning/>   Excution Trading</h2> <hr/><br/><br/>
+                          <h2> <FiCloudLightning/> &nbsp;  Excution Trading</h2> <hr/><br/><br/>
                           <p  show = {this.state.showstate}>We can excute Flash Loan Excute on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
                           <div className= "row">
                           <div className = "col-1"></div>
@@ -659,7 +673,7 @@ class Display extends Component {
                           <InputGroup className="mb-3">
 
                           <Button variant={this.state.autoExcuteButtonState ? "danger" : "success"} id="button-addon2"  onClick={this.state.autoExcuteButtonState ? ()=>this.stopAutoExcute(): ()=>this.autoExcute()}  style={{ width: '100%' }}>
-                          <FiCloudLightning/>  {this.state.autoExcuteButtonState ? "Stop Auto Excute" : "Start Auto Excute"} 
+                          <FiCloudLightning/> &nbsp;&nbsp; {this.state.autoExcuteButtonState ?  "Stop Auto Excute" : "Start Auto Excute"} 
                           </Button>
                           </InputGroup>
                           </div></div>
