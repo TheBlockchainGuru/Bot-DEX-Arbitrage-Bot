@@ -8,10 +8,8 @@ import { database,  } from './firebase/firebase';
 import { FiMonitor , FiPlus , FiCloudLightning , FiUserPlus   } from "react-icons/fi";
 import { BsClockHistory, BsTable } from "react-icons/bs"
 import { GiReceiveMoney } from "react-icons/gi"
-import LoanContract from '../contracts/artifacts/FlashloanV1.json';
 import { ethers } from 'ethers';
 
-const smartContractAddress = "0xfD07081eA2AfBd133E8394d6e86cd26487625062";
 const web3                 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"));
 const uniswap_address      = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'
 const sushi_address        = '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F'
@@ -183,11 +181,11 @@ class Display extends Component {
 
         max_buy = Math.max.apply(null,[uni_buy,sushi_buy, defi_buy])
         
-        if (max_buy == uni_buy ){
+        if (max_buy === uni_buy ){
           firstDex = uniswap_address;
         }
 
-        else if (max_buy == sushi_buy){
+        else if (max_buy === sushi_buy){
           firstDex = sushi_address
         }
         
@@ -197,10 +195,10 @@ class Display extends Component {
 
         max_sell= Math.min.apply(null,[uni_sell,sushi_sell,defi_sell]) 
 
-        if (max_sell == uni_sell ){
+        if (max_sell === uni_sell ){
           secondDex = uniswap_address;
         }
-        else if (max_sell == sushi_sell){
+        else if (max_sell === sushi_sell){
           secondDex = sushi_address
         }
         else {
@@ -228,7 +226,7 @@ class Display extends Component {
           profit_rate_style =  <a className='text-danger'> {profit_rate} </a>
         }
 
-        if (this.state.tradeToken == this.state.tokenAddresses[index]["Address"] ){
+        if (this.state.tradeToken === this.state.tokenAddresses[index]["Address"] ){
           this.setState({
             tradeTokenAddress : this.state.tokenAddresses[index]["Address"],
             tradeToken : tokenName,
@@ -272,12 +270,12 @@ class Display extends Component {
     }
 
     async addAddress(){
-      if(this.state.inputAddress==""){
+      if(this.state.inputAddress===""){
         alert("Please check  Address")
         return
       }
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
-        if(this.state.tokenAddresses[index]["Address"] == web3.utils.toChecksumAddress(this.state.inputAddress)){
+        if(this.state.tokenAddresses[index]["Address"] === web3.utils.toChecksumAddress(this.state.inputAddress)){
           
           let buffer = ''
           this.setState({inputAddress : buffer})
@@ -363,7 +361,7 @@ class Display extends Component {
 
 
     autoExcute(){
-      if (this.state.ownerAddress == '' || this.state.ownerPrivateKey == ''){
+      if (this.state.ownerAddress === '' || this.state.ownerPrivateKey === ''){
           alert("please input address and privatekey")
           return
       }
