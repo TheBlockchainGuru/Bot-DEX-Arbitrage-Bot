@@ -248,7 +248,6 @@ class Display extends Component {
 
         profit_rate =  Math.round((max_buy - max_sell)/max_buy * 1000000) / 10000
 
-
          uni_buy   == 0 ? uni_buy = <a className='text-warning'> xxx.xxx </a> : uni_buy = uni_buy
          sushi_buy == 0 ? sushi_buy = <a className='text-warning'> xxx.xxx</a> : sushi_buy = sushi_buy
          defi_buy  == 0 ? defi_buy = <a className='text-warning'> xxx.xxx </a> : defi_buy = defi_buy
@@ -256,7 +255,6 @@ class Display extends Component {
          uni_sell   == 100000000000000000000 ? uni_sell   = <a className='text-warning'> xxx.xxx </a> : uni_sell = uni_sell 
          sushi_sell == 100000000000000000000 ? sushi_sell = <a className='text-warning'> xxx.xxx </a> : sushi_sell = sushi_sell
          defi_sell  == 100000000000000000000 ? defi_sell  = <a className='text-warning'> xxx.xxx </a> : defi_sell = defi_sell
-
 
         if (profit_rate > 0 ){
           profit_rate_style =  <a className='text-success'> {profit_rate} </a>
@@ -323,7 +321,6 @@ class Display extends Component {
         }
       }
     }
-
 
     async manualExcute(){
 
@@ -742,7 +739,7 @@ class Display extends Component {
                           <br/><br/><br/>
 
                           <h2> <FiCloudLightning/> &nbsp;  auto Trading</h2> <hr/><br/><br/>
-                          <p  show = {this.state.showstate}>We can excute Arbitrage trading on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
+                          <p  show = {this.state.showstate}>We can execute Arbitrage trading on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
                           <div className= "row">
                           <div className = "col-1"></div>
                           <div className = "col-10">
