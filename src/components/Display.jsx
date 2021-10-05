@@ -95,7 +95,7 @@ class Display extends Component {
             this.setState({
               tokenAddresses : walletList
             })
-            console.log(this.state.tokenAddresses)
+
         }
     }
 
@@ -275,16 +275,33 @@ class Display extends Component {
           profit_rate_style =  <a className='text-danger'> {profit_rate} </a>
         }
 
-        if (this.state.tradeToken === this.state.tokenAddresses[index]["Address"] ){
-          this.setState({
-            tradeTokenAddress : this.state.tokenAddresses[index]["Address"],
-            tradeToken : tokenName,
-            tradebuyprice : max_buy,
-            tradesellprice : max_sell,
-            traderate : profit_rate,
-            firstDex : firstDex,
-            secondDex: secondDex
-          })
+        if (this.state.tradeTokenAddress == this.state.tokenAddresses[index]["Address"] )
+        {
+          console.log(this.state.tokenAddresses[index]["Address"], this.state.tradeTokenAddress, profit_rate)
+          if (profit_rate > 0){
+            console.log("zero over")
+            this.setState({
+              tradeTokenAddress : this.state.tokenAddresses[index]["Address"],
+              tradeToken : tokenName,
+              tradebuyprice : max_buy,
+              tradesellprice : max_sell,
+              traderate : profit_rate,
+              firstDex : firstDex,
+              secondDex: secondDex
+            })
+          } 
+          else {
+            console.log("zero down")
+            this.setState({
+              tradeTokenAddress : '',
+              tradeToken : '',
+              tradebuyprice : 0,
+              tradesellprice : 0,
+              traderate : 0,
+              firstDex : '',
+              secondDex: ''
+            })
+          }
         }
 
         let tableData = {
@@ -332,7 +349,6 @@ class Display extends Component {
 
       if(this.state.traderate < this.state.autoProfit){
         console.log("faild profit")
-
         return
       }
 

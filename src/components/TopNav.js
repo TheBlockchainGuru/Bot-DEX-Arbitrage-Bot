@@ -25,7 +25,7 @@ class TopNav extends Component {
         return (
 
 
-            <nav className="navbar navbar-expand-lg navbar-light bg-dark" style={{  backgroundImage: `url(./topnav.jpg)` 
+            <nav className="navbar navbar-expand-lg navbar-light bg-dark" style={{  backgroundImage: `url(./topnav.jpg)` , backgroundSize : 'width = 100%'
               }} >
                 {/* <!-- Container wrapper --> */}
                 <div className="container-fluid">
