@@ -626,7 +626,7 @@ class Display extends Component {
                     <div className = "col-7">
                     <Card  bg="light" style={{ height: '35rem' , overflow:'scroll'}} border="primary" overflow="scroll">
                       <Card.Body>
-                        <Card.Title><h2> <FiMonitor/> &nbsp; UniSwap SushiSwap Token Price Monitor</h2> <hr/></Card.Title>
+                        <Card.Title><h2> <FiMonitor/> &nbsp; Dex Token Price Monitor</h2> <hr/></Card.Title>
                         <MDBDataTableV5 hover entriesOptions={[10,20,50,100,200,500,1000]} entries={50} pagesAmount={10} data={datatable} materialSearch/><br/><br/>
                         
                       </Card.Body>
@@ -645,7 +645,7 @@ class Display extends Component {
                     <Card bg="light"  style={{ height: '67rem', overflow:'scroll' }} border="primary">
                       <Card.Body>
                       
-                      <h2> <GiReceiveMoney/> &nbsp; Input Loan Amount</h2> <hr/><br/>
+                      <h2> <GiReceiveMoney/> &nbsp; Trading Amount</h2> <hr/><br/>
                       <div className = "row">
                         <div className = "col-1"></div>
                         <div className = "col-10">
@@ -664,7 +664,7 @@ class Display extends Component {
                         </div>
                         <div className = "col-1"></div>
                       </div><br/><br/>
-                        <h2> <FiUserPlus/> &nbsp; Input your Wallet Address and Private Key</h2> <hr/><br/>
+                        <h2> <FiUserPlus/> &nbsp; Wallet Address and Private Key</h2> <hr/><br/>
                           <div className= "row">
                             <div className = "col-1"></div>
                             <div className = "col-10">
@@ -690,7 +690,7 @@ class Display extends Component {
                             <div className = "col-1"></div>
                           </div><br/><br/>
 
-                          <h2> <FiPlus/>&nbsp;  Add Token Address</h2> <hr/><br/>
+                          <h2> <FiPlus/>&nbsp; Token Address for listing</h2> <hr/><br/>
                           <div className= "row">
                             <div className = "col-1"></div>
                             <div className = "col-10">
@@ -711,7 +711,7 @@ class Display extends Component {
                           </div>
                           <br/><br/><br/>
 
-                          <h2> <FiCloudLightning/> &nbsp;  Excution Trading</h2> <hr/><br/><br/>
+                          <h2> <FiCloudLightning/> &nbsp;  auto Trading</h2> <hr/><br/><br/>
                           <p  show = {this.state.showstate}>We can excute Flash Loan Excute on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
                           <div className= "row">
                           <div className = "col-1"></div>
@@ -719,7 +719,7 @@ class Display extends Component {
                           <InputGroup className="mb-3">
 
                           <Button variant={this.state.autoExcuteButtonState ? "danger" : "success"} id="button-addon2"  onClick={this.state.autoExcuteButtonState ? ()=>this.stopAutoExcute(): ()=>this.autoExcute()}  style={{ width: '100%' }}>
-                          <FiCloudLightning/> &nbsp;&nbsp; {this.state.autoExcuteButtonState ?  "Stop Auto Excute" : "Start Auto Excute"} 
+                          <FiCloudLightning/> &nbsp;&nbsp; {this.state.autoExcuteButtonState ?  "Stop Auto Execute" : "Start Auto Execute"} 
                           </Button>
                           </InputGroup>
                           <br/>
