@@ -100,7 +100,7 @@ class Display extends Component {
 
     async loadLog(){
       console.log("start load log")
-      database.ref('testlog/').get().then((snapshot) => {
+      database.ref('log/').get().then((snapshot) => {
           if (snapshot.exists) {
             var logs = [];
               const newArray = snapshot.val();
@@ -324,6 +324,8 @@ class Display extends Component {
         progressbarState : 0,
         progressLabel : 'Please start traidng'
       })
+
+
       if(this.state.traderate < this.state.autoProfit){
         console.log("faild profit")
         this.setState({
@@ -332,6 +334,7 @@ class Display extends Component {
         })
         return
       }
+
 
       let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
       console.log("first value" , first_value)
@@ -371,6 +374,7 @@ class Display extends Component {
           let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeTokenAddress);
           let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress).call()
           console.log("tokenbal", tokenBalance)
+          
           this.setState({
             progressbarState : 75,
             progressLabel : 'Successful buy token and selling token'
@@ -384,10 +388,12 @@ class Display extends Component {
             gas      : this.state.autoGasLimit,
             nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
           }
+          
           this.setState({
             progressbarState : 100,
             progressLabel : 'successfule'
           })
+
             const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
 
             await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
@@ -403,7 +409,7 @@ class Display extends Component {
               this.setState({
                 progressbarState : 100
               })
-              var userListRef = database.ref('testlog')
+              var userListRef = database.ref('log')
               var newUserRef = userListRef.push();
               newUserRef.set(logList);
               let buffer = ''

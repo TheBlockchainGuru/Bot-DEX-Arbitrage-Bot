@@ -1,5 +1,5 @@
-export const walletAddress = "0x65F8f6f98d98e077E55483241757BE475Ab328BC"
-export const walletPrivate = "ceec75407e80fdcbbb3c9061fb46519cdfff028c0b4b54da7cc49fa189650a3b"
+export const walletAddress = ""
+export const walletPrivate = ""
 export const web3url = "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
 export const uniswap = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 export const sushiswap = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"
