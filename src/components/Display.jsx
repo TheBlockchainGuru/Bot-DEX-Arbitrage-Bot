@@ -7,7 +7,7 @@ import {walletAddress,walletPrivate,web3url, uniswap, sushiswap, defiswap, wetha
 import { MDBDataTableV5 } from 'mdbreact';
 import { database,  } from './firebase/firebase';
 import { FiMonitor , FiPlus , FiCloudLightning , FiUserPlus   } from "react-icons/fi";
-import { BsClockHistory, BsTable } from "react-icons/bs"
+import { BsClockHistory, BsTable, BsTrash } from "react-icons/bs"
 import { GiReceiveMoney } from "react-icons/gi"
 import { ethers } from 'ethers';
 
@@ -79,6 +79,7 @@ class Display extends Component {
     }
 
     async loadAddresses(){
+      console.log("load address")
       let snapshot = await database.ref(addressdatabaseurl + '/').get();
         if (snapshot.exists) {
             var walletList = [];
@@ -94,10 +95,39 @@ class Display extends Component {
             this.setState({
               tokenAddresses : walletList
             })
+            console.log(this.state.tokenAddresses)
         }
     }
 
+    async addAddress(){
+      if(this.state.inputAddress===""){
+        alert("Please check  Address")
+        return
+      }
+      for (let index = 0; index < this.state.tokenAddresses.length; index++) {
+        if(this.state.tokenAddresses[index]["Address"] === web3.utils.toChecksumAddress(this.state.inputAddress)){
+          
+          let buffer = ''
+          this.setState({inputAddress : buffer})
+          alert("Aleady exist")
+          return
+        } 
+      }
+
+      const tokenAddressList= {
+        Address   : web3.utils.toChecksumAddress(this.state.inputAddress),
+      }
+      var userListRef = database.ref(addressdatabaseurl)
+      var newUserRef = userListRef.push();
+      newUserRef.set(tokenAddressList);
+      let buffer = ''
+      this.setState({inputAddress : buffer})
+      alert("input successfuly")
+      this.loadAddresses();
+    }
+
     async loadLog(){
+      console.log("start load log")
       database.ref(logdatabaseurl + '/').get().then((snapshot) => {
           if (snapshot.exists) {
             var logs = [];
@@ -124,6 +154,11 @@ class Display extends Component {
       });
     }
 
+    async clearLog(){
+      database.ref(logdatabaseurl + '/').remove();
+      this.loadLog();
+    }
+
     async start(){
 
       if(autoAmount !== this.state.autoAmount){
@@ -133,8 +168,13 @@ class Display extends Component {
       }
 
       let autoAmount =  this.state.autoAmount;
+      console.log("loan amount " , this.state.autoAmount)
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
+        console.log(index)
         let uni_buy , uni_sell,sushi_buy, sushi_sell, defi_buy, defi_sell, max_buy, max_sell, profit_rate, profit_rate_style, firstDex, secondDex, tokenName, tokenDecimal
+        let uniflag = 1
+        let sushiflag = 1
+        let defiflag = 1
       try{
 
         try{
@@ -153,6 +193,7 @@ class Display extends Component {
         }catch(err){
           uni_buy = 0
           uni_sell =100000000000000000000
+          uniflag = 0
         }
         try{
           let mycontract2  = new web3.eth.Contract(abi, sushi_address)
@@ -163,6 +204,7 @@ class Display extends Component {
         }catch(err){
           sushi_buy =0
           sushi_sell =100000000000000000000
+          sushiflag = 0
         }
 
         try{
@@ -174,6 +216,7 @@ class Display extends Component {
         }catch(err){
           defi_buy  = 0
           defi_sell = 100000000000000000000
+          defiflag = 0
         }
 
         max_buy = Math.max.apply(null,[uni_buy,sushi_buy, defi_buy])
@@ -270,6 +313,7 @@ class Display extends Component {
             this.setState({
               tableDatas : tableDatas
             })
+          console.log(err)
           index  =  index
         }
 
@@ -280,32 +324,6 @@ class Display extends Component {
       }
     }
 
-    async addAddress(){
-      if(this.state.inputAddress===""){
-        alert("Please check  Address")
-        return
-      }
-      for (let index = 0; index < this.state.tokenAddresses.length; index++) {
-        if(this.state.tokenAddresses[index]["Address"] === web3.utils.toChecksumAddress(this.state.inputAddress)){
-          
-          let buffer = ''
-          this.setState({inputAddress : buffer})
-          alert("Aleady exist")
-          return
-        } 
-      }
-
-      const tokenAddressList= {
-        Address   : web3.utils.toChecksumAddress(this.state.inputAddress),
-      }
-      var userListRef = database.ref(addressdatabaseurl)
-      var newUserRef = userListRef.push();
-      newUserRef.set(tokenAddressList);
-      let buffer = ''
-      this.setState({inputAddress : buffer})
-      alert("input successfuly")
-      this.loadAddresses();
-    }
 
     async manualExcute(){
 
@@ -316,15 +334,22 @@ class Display extends Component {
 
 
       if(this.state.traderate < this.state.autoProfit){
+        console.log("faild profit")
+
         return
       }
 
 
       let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+      console.log("first value" , first_value)
+
       if (first_value - 1000000000000000000 < this.state.autoAmount * 1000000000000000000 ){
+        console.log("error : there is no enought eth value for trading")
       }
 
       else {
+        console.log("start with :",this.state.tradeToken,this.state.tradeTokenAddress, this.state.autoAmount, this.state.firstDex, this.state.secondDex)
+        
         this.setState({
           progressbarState : 25,
           progressLabel : 'sending transaction for buy token'
@@ -356,9 +381,12 @@ class Display extends Component {
         
         await web3.eth.sendSignedTransaction(promise.rawTransaction)
         .once('confirmation', async() => {
+          console.log("start")
           let secondDexContract   = await  web3.eth.Contract(abi, this.state.secondDex);
           let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeTokenAddress);
           let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress).call()
+          console.log("tokenbal", tokenBalance)
+          
           this.setState({
             progressbarState : 75,
             progressLabel : 'Successful buy token and selling token'
@@ -381,6 +409,7 @@ class Display extends Component {
             const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
 
             await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
+              console.log('successful')
               const logList= {
                 timeStamp  : new Date().toISOString(),
                 autoAmount : this.state.autoAmount,
@@ -399,9 +428,11 @@ class Display extends Component {
               this.setState({logList : buffer})
               this.loadLog()
               let secondValue = web3.eth.getBalance(this.state.ownerAddress)
+              console.log("profit is :", first_value-secondValue);
             })
         })
         .once('error', (e) => {
+            console.log(e)
             this.setState({
               progressbarState : 0
             })
@@ -454,6 +485,7 @@ class Display extends Component {
         autoGasValue  : 40,
         autoModeState : false,
       })
+      console.log("stop excute")
       clearInterval(intervalvar)
     }
  
@@ -545,6 +577,7 @@ class Display extends Component {
           this.setState({
             inputAddress : addLabel
           })
+          console.log(this.state.inputAddress)
         }
 
         const handleAutoProfit = (e) => {
@@ -619,7 +652,19 @@ class Display extends Component {
 
                     <Card bg="light"  style={{ height: '30rem', overflow:'scroll' }} border="primary" >
                       <Card.Body>
-                        <Card.Title><h2> <BsClockHistory/> &nbsp; Trade Log</h2> <hr/></Card.Title>
+                         <div className = "row">
+                           <div className = "col-10">
+                              <Card.Title><h2> <BsClockHistory/> &nbsp; Trade Log</h2> </Card.Title>
+                           </div>
+                           <div className = "col-2">
+                                <Button variant="primary" id="button-addon2"  onClick={()=>this.clearLog()}>
+                                <BsTrash/>  Clear Log History
+                                </Button>
+                           </div>
+                         </div>
+                         <hr/>
+                                                 
+
                         <MDBDataTableV5 hover entriesOptions={[10,20,50,100,200,500,1000]} entries={50} pagesAmount={1000} data={datalog} />
                       </Card.Body>
                     </Card>
@@ -636,7 +681,7 @@ class Display extends Component {
                         <div className = "col-10">
                         <InputGroup className="mb-3">
                           <InputGroup.Text id="basic-addon3">
-                            Flash Amount (Eth)
+                            Trade Amount (Eth)
                           </InputGroup.Text>
                           <FormControl id="basic-url" aria-describedby="basic-addon3" type="text"   defaultValue = {this.state.autoAmount} 
                           onChange={handleAutoAmount}
@@ -697,7 +742,7 @@ class Display extends Component {
                           <br/><br/><br/>
 
                           <h2> <FiCloudLightning/> &nbsp;  auto Trading</h2> <hr/><br/><br/>
-                          <p  show = {this.state.showstate}>We can excute Flash Loan Excute on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
+                          <p  show = {this.state.showstate}>We can excute Arbitrage trading on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
                           <div className= "row">
                           <div className = "col-1"></div>
                           <div className = "col-10">
