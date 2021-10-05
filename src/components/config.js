@@ -1,5 +1,7 @@
 export const walletAddress = ""
 export const walletPrivate = ""
+export const Addressdatabaseurl  = "TokenAddress"
+export const logdatabaseurl = "log"
 export const web3url = "https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
 export const uniswap = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
 export const sushiswap = "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F"

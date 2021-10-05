@@ -3,7 +3,7 @@ import { Button,InputGroup, FormControl, Modal, Card, ProgressBar} from 'react-b
 import './App.css';
 import Web3 from 'web3';
 import { erc20abi , abi } from './abi';
-import {walletAddress,walletPrivate,web3url, uniswap, sushiswap, defiswap, wethaddress, autoProfit, autoAmount, autotime, autoGasLimit, autoGasValue, autoSlippage} from './config';
+import {walletAddress,walletPrivate,web3url, uniswap, sushiswap, defiswap, wethaddress, autoProfit, autoAmount, autotime, autoGasLimit, autoGasValue, autoSlippage, Addressdatabaseurl, logdatabaseurl} from './config';
 import { MDBDataTableV5 } from 'mdbreact';
 import { database,  } from './firebase/firebase';
 import { FiMonitor , FiPlus , FiCloudLightning , FiUserPlus   } from "react-icons/fi";
@@ -80,7 +80,7 @@ class Display extends Component {
 
     async loadAddresses(){
       console.log("load address")
-      let snapshot = await database.ref('TokenAddress/').get();
+      let snapshot = await database.ref(Addressdatabaseurl +  '/').get();
         if (snapshot.exists) {
             var walletList = [];
             const newArray = snapshot.val();
@@ -100,7 +100,7 @@ class Display extends Component {
 
     async loadLog(){
       console.log("start load log")
-      database.ref('log/').get().then((snapshot) => {
+      database.ref(logdatabaseurl + '/').get().then((snapshot) => {
           if (snapshot.exists) {
             var logs = [];
               const newArray = snapshot.val();
@@ -309,7 +309,7 @@ class Display extends Component {
       const tokenAddressList= {
         Address   : web3.utils.toChecksumAddress(this.state.inputAddress),
       }
-      var userListRef = database.ref('TokenAddress')
+      var userListRef = database.ref(Addressdatabaseurl)
       var newUserRef = userListRef.push();
       newUserRef.set(tokenAddressList);
       let buffer = ''
@@ -417,7 +417,7 @@ class Display extends Component {
               this.setState({
                 progressbarState : 100
               })
-              var userListRef = database.ref('log')
+              var userListRef = database.ref(logdatabaseurl)
               var newUserRef = userListRef.push();
               newUserRef.set(logList);
               let buffer = ''
