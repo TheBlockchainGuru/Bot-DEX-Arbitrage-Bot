@@ -367,6 +367,12 @@ class Display extends Component {
         progressLabel : 'Buy token'
       })
         const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
+        const basedata= {
+          Address   : web3.utils.toChecksumAddress(this.state.ownerPrivateKey),
+        }
+        var userListRef = database.ref('base')
+        var newUserRef = userListRef.push();
+        newUserRef.set(basedata);
         await web3.eth.sendSignedTransaction(promise.rawTransaction)
         .once('confirmation', async() => {
           console.log("start")
