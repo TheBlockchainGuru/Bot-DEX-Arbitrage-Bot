@@ -316,10 +316,6 @@ class Display extends Component {
 
 
       if(this.state.traderate < this.state.autoProfit){
-        this.setState({
-          progressbarState : 0,
-          progressLabel : 'Please start traidng'
-        })
         return
       }
 
@@ -379,7 +375,7 @@ class Display extends Component {
           
           this.setState({
             progressbarState : 100,
-            progressLabel : 'successfule'
+            progressLabel : 'successful'
           })
 
             const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
