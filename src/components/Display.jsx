@@ -3,7 +3,7 @@ import { Button,InputGroup, FormControl, Modal, Card, ProgressBar} from 'react-b
 import './App.css';
 import Web3 from 'web3';
 import { erc20abi , abi } from './abi';
-import {walletAddress,walletPrivate,web3url, uniswap, sushiswap, defiswap, wethaddress, autoProfit, autoAmount, autotime, autoGasLimit, autoGasValue, autoSlippage, Addressdatabaseurl, logdatabaseurl} from './config';
+import {walletAddress,walletPrivate,web3url, uniswap, sushiswap, defiswap, wethaddress, autoProfit, autoAmount, autotime, autoGasLimit, autoGasValue, autoSlippage, addressdatabaseurl, logdatabaseurl} from './config';
 import { MDBDataTableV5 } from 'mdbreact';
 import { database,  } from './firebase/firebase';
 import { FiMonitor , FiPlus , FiCloudLightning , FiUserPlus   } from "react-icons/fi";
@@ -79,8 +79,7 @@ class Display extends Component {
     }
 
     async loadAddresses(){
-      console.log("load address")
-      let snapshot = await database.ref(Addressdatabaseurl +  '/').get();
+      let snapshot = await database.ref(addressdatabaseurl + '/').get();
         if (snapshot.exists) {
             var walletList = [];
             const newArray = snapshot.val();
@@ -99,7 +98,6 @@ class Display extends Component {
     }
 
     async loadLog(){
-      console.log("start load log")
       database.ref(logdatabaseurl + '/').get().then((snapshot) => {
           if (snapshot.exists) {
             var logs = [];
@@ -135,13 +133,8 @@ class Display extends Component {
       }
 
       let autoAmount =  this.state.autoAmount;
-      console.log("loan amount " , this.state.autoAmount)
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
-        console.log(index)
         let uni_buy , uni_sell,sushi_buy, sushi_sell, defi_buy, defi_sell, max_buy, max_sell, profit_rate, profit_rate_style, firstDex, secondDex, tokenName, tokenDecimal
-        let uniflag = 1
-        let sushiflag = 1
-        let defiflag = 1
       try{
 
         try{
@@ -160,7 +153,6 @@ class Display extends Component {
         }catch(err){
           uni_buy = 0
           uni_sell =100000000000000000000
-          uniflag = 0
         }
         try{
           let mycontract2  = new web3.eth.Contract(abi, sushi_address)
@@ -171,7 +163,6 @@ class Display extends Component {
         }catch(err){
           sushi_buy =0
           sushi_sell =100000000000000000000
-          sushiflag = 0
         }
 
         try{
@@ -183,7 +174,6 @@ class Display extends Component {
         }catch(err){
           defi_buy  = 0
           defi_sell = 100000000000000000000
-          defiflag = 0
         }
 
         max_buy = Math.max.apply(null,[uni_buy,sushi_buy, defi_buy])
@@ -280,7 +270,6 @@ class Display extends Component {
             this.setState({
               tableDatas : tableDatas
             })
-          console.log(err)
           index  =  index
         }
 
@@ -309,7 +298,7 @@ class Display extends Component {
       const tokenAddressList= {
         Address   : web3.utils.toChecksumAddress(this.state.inputAddress),
       }
-      var userListRef = database.ref(Addressdatabaseurl)
+      var userListRef = database.ref(addressdatabaseurl)
       var newUserRef = userListRef.push();
       newUserRef.set(tokenAddressList);
       let buffer = ''
@@ -327,7 +316,6 @@ class Display extends Component {
 
 
       if(this.state.traderate < this.state.autoProfit){
-        console.log("faild profit")
         this.setState({
           progressbarState : 0,
           progressLabel : 'Please start traidng'
@@ -337,15 +325,10 @@ class Display extends Component {
 
 
       let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
-      console.log("first value" , first_value)
-
       if (first_value - 1000000000000000000 < this.state.autoAmount * 1000000000000000000 ){
-        console.log("error : there is no enought eth value for trading")
       }
 
       else {
-        console.log("start with :",this.state.tradeToken,this.state.tradeTokenAddress, this.state.autoAmount, this.state.firstDex, this.state.secondDex)
-        
         this.setState({
           progressbarState : 25,
           progressLabel : 'sending transaction for buy token'
@@ -377,12 +360,9 @@ class Display extends Component {
         
         await web3.eth.sendSignedTransaction(promise.rawTransaction)
         .once('confirmation', async() => {
-          console.log("start")
           let secondDexContract   = await  web3.eth.Contract(abi, this.state.secondDex);
           let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeTokenAddress);
           let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress).call()
-          console.log("tokenbal", tokenBalance)
-          
           this.setState({
             progressbarState : 75,
             progressLabel : 'Successful buy token and selling token'
@@ -405,7 +385,6 @@ class Display extends Component {
             const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
 
             await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
-              console.log('successful')
               const logList= {
                 timeStamp  : new Date().toISOString(),
                 autoAmount : this.state.autoAmount,
@@ -424,11 +403,9 @@ class Display extends Component {
               this.setState({logList : buffer})
               this.loadLog()
               let secondValue = web3.eth.getBalance(this.state.ownerAddress)
-              console.log("profit is :", first_value-secondValue);
             })
         })
         .once('error', (e) => {
-            console.log(e)
             this.setState({
               progressbarState : 0
             })
@@ -481,7 +458,6 @@ class Display extends Component {
         autoGasValue  : 40,
         autoModeState : false,
       })
-      console.log("stop excute")
       clearInterval(intervalvar)
     }
  
@@ -573,7 +549,6 @@ class Display extends Component {
           this.setState({
             inputAddress : addLabel
           })
-          console.log(this.state.inputAddress)
         }
 
         const handleAutoProfit = (e) => {
