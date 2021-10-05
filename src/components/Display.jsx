@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Button,InputGroup, FormControl, Modal, Card} from 'react-bootstrap';
+import { Button,InputGroup, FormControl, Modal, Card, ProgressBar} from 'react-bootstrap';
 import './App.css';
 import Web3 from 'web3';
 import { erc20abi , abi } from './abi';
@@ -11,12 +11,9 @@ import { BsClockHistory, BsTable } from "react-icons/bs"
 import { GiReceiveMoney } from "react-icons/gi"
 import { ethers } from 'ethers';
 
-
-
-
 const web3                 = new Web3(new Web3.providers.HttpProvider(web3url));
 const uniswap_address      = uniswap
-const sushi_address        = sushiswap  
+const sushi_address        = sushiswap
 const defiswap_address     = defiswap
 const Eth_address          = wethaddress
 let intervalvar         
@@ -65,6 +62,8 @@ class Display extends Component {
         autoModeState : false,
         walletBalance : '',
         logs :[],
+        progressbarState : 0,
+        progressLabel : 'Please start trading!'
       }
     }
 
@@ -101,7 +100,7 @@ class Display extends Component {
 
     async loadLog(){
       console.log("start load log")
-      database.ref('log/').get().then((snapshot) => {
+      database.ref('testlog/').get().then((snapshot) => {
           if (snapshot.exists) {
             var logs = [];
               const newArray = snapshot.val();
@@ -140,6 +139,9 @@ class Display extends Component {
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
         console.log(index)
         let uni_buy , uni_sell,sushi_buy, sushi_sell, defi_buy, defi_sell, max_buy, max_sell, profit_rate, profit_rate_style, firstDex, secondDex, tokenName, tokenDecimal
+        let uniflag = 1
+        let sushiflag = 1
+        let defiflag = 1
       try{
 
         try{
@@ -157,7 +159,8 @@ class Display extends Component {
           uni_sell         = Math.round( uni_sell[0]    / Math.pow(10, tokenDecimal - 5 )) / 100000
         }catch(err){
           uni_buy = 0
-          uni_sell = 1000000000000000000000000
+          uni_sell =100000000000000000000
+          uniflag = 0
         }
         try{
           let mycontract2  = new web3.eth.Contract(abi, sushi_address)
@@ -167,7 +170,8 @@ class Display extends Component {
           sushi_sell       = Math.round( sushi_sell[0]  / Math.pow(10, tokenDecimal - 5 )) / 100000
         }catch(err){
           sushi_buy =0
-          sushi_sell =10000000000000000000000
+          sushi_sell =100000000000000000000
+          sushiflag = 0
         }
 
         try{
@@ -178,11 +182,11 @@ class Display extends Component {
           defi_sell        = Math.round( defi_sell[0]   / Math.pow(10, tokenDecimal - 5 )) / 100000
         }catch(err){
           defi_buy  = 0
-          defi_sell = 10000000000000000000000
+          defi_sell = 100000000000000000000
+          defiflag = 0
         }
 
         max_buy = Math.max.apply(null,[uni_buy,sushi_buy, defi_buy])
-        
         if (max_buy === uni_buy ){
           firstDex = uniswap_address;
         }
@@ -194,7 +198,6 @@ class Display extends Component {
         else {
           firstDex = defiswap_address
         }
-
         max_sell= Math.min.apply(null,[uni_sell,sushi_sell,defi_sell])
 
 
@@ -211,6 +214,15 @@ class Display extends Component {
         }
 
         profit_rate =  Math.round((max_buy - max_sell)/max_buy * 1000000) / 10000
+
+
+         uni_buy   == 0 ? uni_buy = <a className='text-warning'> xxx.xxx </a> : uni_buy = uni_buy
+         sushi_buy == 0 ? sushi_buy = <a className='text-warning'> xxx.xxx</a> : sushi_buy = sushi_buy
+         defi_buy  == 0 ? defi_buy = <a className='text-warning'> xxx.xxx </a> : defi_buy = defi_buy
+
+         uni_sell   == 100000000000000000000 ? uni_sell   = <a className='text-warning'> xxx.xxx </a> : uni_sell = uni_sell 
+         sushi_sell == 100000000000000000000 ? sushi_sell = <a className='text-warning'> xxx.xxx </a> : sushi_sell = sushi_sell
+         defi_sell  == 100000000000000000000 ? defi_sell  = <a className='text-warning'> xxx.xxx </a> : defi_sell = defi_sell
 
 
         if (profit_rate > 0 ){
@@ -307,10 +319,20 @@ class Display extends Component {
     }
 
     async manualExcute(){
+
+      this.setState({
+        progressbarState : 0,
+        progressLabel : 'Please start traidng'
+      })
       if(this.state.traderate < this.state.autoProfit){
         console.log("faild profit")
+        this.setState({
+          progressbarState : 0,
+          progressLabel : 'Please start traidng'
+        })
         return
       }
+
       let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
       console.log("first value" , first_value)
 
@@ -320,6 +342,11 @@ class Display extends Component {
 
       else {
         console.log("start with :",this.state.tradeToken,this.state.tradeTokenAddress, this.state.autoAmount, this.state.firstDex, this.state.secondDex)
+        
+        this.setState({
+          progressbarState : 25,
+          progressLabel : 'sending transaction for buy token'
+        })
 
       let firstDexContract   = await web3.eth.Contract(abi, this.state.firstDex);
       let tx = {
@@ -331,6 +358,11 @@ class Display extends Component {
         nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
         value    : ethers.BigNumber.from((this.state.autoAmount * 1000000000000000000)+ '')
       }
+
+      this.setState({
+        progressbarState : 50,
+        progressLabel : 'Buy token'
+      })
         const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
         await web3.eth.sendSignedTransaction(promise.rawTransaction)
         .once('confirmation', async() => {
@@ -338,7 +370,11 @@ class Display extends Component {
           let secondDexContract   = await  web3.eth.Contract(abi, this.state.secondDex);
           let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeTokenAddress);
           let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress).call()
-          console.log("tokenbalcneceeeeeeeeee", tokenBalance)
+          console.log("tokenbal", tokenBalance)
+          this.setState({
+            progressbarState : 75,
+            progressLabel : 'Successful buy token and selling token'
+          })
          
           let tx = {
             from : this.state.ownerAddress,
@@ -348,6 +384,10 @@ class Display extends Component {
             gas      : this.state.autoGasLimit,
             nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
           }
+          this.setState({
+            progressbarState : 100,
+            progressLabel : 'successfule'
+          })
             const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
 
             await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
@@ -360,7 +400,10 @@ class Display extends Component {
                 firstDex     : this.state.firstDex,
                 secondDex    : this.state.secondDex,
               }
-              var userListRef = database.ref('log')
+              this.setState({
+                progressbarState : 100
+              })
+              var userListRef = database.ref('testlog')
               var newUserRef = userListRef.push();
               newUserRef.set(logList);
               let buffer = ''
@@ -372,6 +415,9 @@ class Display extends Component {
         })
         .once('error', (e) => {
             console.log(e)
+            this.setState({
+              progressbarState : 0
+            })
         })
       }  
     }
@@ -617,7 +663,7 @@ class Display extends Component {
                         </InputGroup>
                         </div>
                         <div className = "col-1"></div>
-                      </div><br/><br/><br/>
+                      </div><br/><br/>
                         <h2> <FiUserPlus/> &nbsp; Input your Wallet Address and Private Key</h2> <hr/><br/>
                           <div className= "row">
                             <div className = "col-1"></div>
@@ -642,7 +688,7 @@ class Display extends Component {
                               </InputGroup>
                               </div>
                             <div className = "col-1"></div>
-                          </div><br/><br/><br/>
+                          </div><br/><br/>
 
                           <h2> <FiPlus/>&nbsp;  Add Token Address</h2> <hr/><br/>
                           <div className= "row">
@@ -663,7 +709,7 @@ class Display extends Component {
                               </div>
                             <div className = "col-1"></div>
                           </div>
-                          <br/><br/><br/><br/>
+                          <br/><br/><br/>
 
                           <h2> <FiCloudLightning/> &nbsp;  Excution Trading</h2> <hr/><br/><br/>
                           <p  show = {this.state.showstate}>We can excute Flash Loan Excute on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
@@ -676,8 +722,12 @@ class Display extends Component {
                           <FiCloudLightning/> &nbsp;&nbsp; {this.state.autoExcuteButtonState ?  "Stop Auto Excute" : "Start Auto Excute"} 
                           </Button>
                           </InputGroup>
+                          <br/>
+                          <h6> {this.state.progressLabel} </h6>
+                          
+                          <ProgressBar animated now={this.state.progressbarState} />
                           </div></div>
-                          <br/><br/><br/>
+                          <br/><br/>
                       </Card.Body>
                     </Card>
                      
