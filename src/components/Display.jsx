@@ -134,6 +134,8 @@ class Display extends Component {
     }
 
     async start(){
+
+      
       let autoAmount =  this.state.autoAmount;
 
       console.log("loan amount " , this.state.autoAmount)
@@ -317,9 +319,8 @@ class Display extends Component {
 
       let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
       this.setState ({
-        ownerBalance : first_value
+        ownerBalance :Math.round(first_value / 10000000000000) / 100000 
       })
-
 
       console.log("first value" , first_value)
 
@@ -371,7 +372,7 @@ class Display extends Component {
             progressbarState : 75,
             progressLabel : 'Successful buy token and selling token'
           })
-         
+        
           let tx = {
             from : this.state.ownerAddress,
             to   : this.state.secondDex,
@@ -385,7 +386,6 @@ class Display extends Component {
             progressbarState : 100,
             progressLabel : 'successful'
           })
-
             const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
 
             await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
@@ -411,7 +411,7 @@ class Display extends Component {
 
               let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
               this.setState ({
-                ownerBalance : first_value
+                ownerBalance :Math.round(first_value / 10000000000000) / 100000 
               })
             })
         })
@@ -423,7 +423,6 @@ class Display extends Component {
         })
       }  
     }
-
     autoExcute(){
       if (this.state.ownerAddress === '' || this.state.ownerPrivateKey === ''){
           alert("please input address and privatekey")
@@ -695,7 +694,7 @@ class Display extends Component {
                               </div>
                             <div className = "col-1"></div>
                           </div><br/><br/>
-                          <h2> <GiMoneyStack/> &nbsp;   Wallet Balance : {this.state.ownerBalance}</h2> <hr/><br/><br/>
+                          <h2> <GiMoneyStack/> &nbsp;   Wallet Balance : {this.state.ownerBalance} </h2> <hr/><br/><br/>
                           <h2> <FiCloudLightning/> &nbsp;  Auto Trading</h2> <hr/><br/><br/>
                           <p  show = {this.state.showstate}>We can execute Arbitrage trading on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
                           <div className= "row">
