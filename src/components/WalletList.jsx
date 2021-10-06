@@ -151,6 +151,8 @@ function Example(props) {
       alert("Please check Address")
       return
     }
+    else {
+      addAddress = await web3.utils.toChecksumAddress(addAddress)
       try{
         let tokenContract= new web3.eth.Contract(erc20abi, await web3.utils.toChecksumAddress(addAddress));
         let tokenName    = await tokenContract.methods.symbol().call().then(function(res) {  return res;  })
@@ -167,12 +169,13 @@ function Example(props) {
           alert("please check token address.")
           addAddress = ''
         }
+    }
   }
+
 
   const handleAddress = async (e) => {
     addAddress  = e.target.value
   }
-
   return (
     <>
       <Button variant="primary" onClick={handleShow}>

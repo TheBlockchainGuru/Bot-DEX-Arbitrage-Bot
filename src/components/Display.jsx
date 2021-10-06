@@ -600,13 +600,12 @@ class Display extends Component {
         const handleOwnerAddress = async (e) => {
           let addLabel  = e.target.value
           this.setState({
-            ownerAddress : addLabel,
+            ownerAddress : await web3.utils.toChecksumAddress(addLabel),
           })
         }
 
         const handleOwnerPrivateKey =  (e) => {
           let addLabel  = e.target.value
-          
           this.setState({
             ownerPrivateKey : addLabel
           }) 
