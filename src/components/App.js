@@ -4,7 +4,7 @@ import TopNav from './TopNav.js';
 import Display from './Display.jsx';
 import WalletList  from './WalletList.jsx';
 import './App.css'
-import Web3 from 'web3';
+
 
 
 

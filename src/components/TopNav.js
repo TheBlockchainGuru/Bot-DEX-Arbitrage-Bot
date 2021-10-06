@@ -8,7 +8,6 @@ class TopNav extends Component {
             connectedAddress : ''
         }
     }
-
     render () {
         return (
             <nav className="navbar navbar-expand-lg navbar-light bg-dark" style={{  backgroundImage: `url(./topnav.jpg)` , backgroundSize : 'width = 100%'
