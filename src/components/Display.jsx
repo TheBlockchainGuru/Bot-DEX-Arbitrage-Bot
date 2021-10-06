@@ -6,7 +6,7 @@ import { erc20abi , abi } from './abi';
 import {walletAddress,walletPrivate,web3url, uniswap, sushiswap, defiswap, wethaddress, autoProfit, autoAmount, autotime, autoGasLimit, autoGasValue, autoSlippage, addressdatabaseurl, logdatabaseurl} from './config';
 import { MDBDataTableV5 } from 'mdbreact';
 import { database,  } from './firebase/firebase';
-import { FiMonitor , FiPlus , FiCloudLightning , FiUserPlus   } from "react-icons/fi";
+import { FiMonitor  , FiCloudLightning , FiUserPlus   } from "react-icons/fi";
 import { BsClockHistory, BsTable, BsTrash } from "react-icons/bs"
 import { GiReceiveMoney } from "react-icons/gi"
 import { ethers } from 'ethers';
@@ -99,33 +99,6 @@ class Display extends Component {
         }
     }
 
-    async addAddress(){
-      if(this.state.inputAddress===""){
-        alert("Please check  Address")
-        return
-      }
-      for (let index = 0; index < this.state.tokenAddresses.length; index++) {
-        if(this.state.tokenAddresses[index]["Address"] === web3.utils.toChecksumAddress(this.state.inputAddress)){
-          
-          let buffer = ''
-          this.setState({inputAddress : buffer})
-          alert("Aleady exist")
-          return
-        } 
-      }
-
-      const tokenAddressList= {
-        Address   : web3.utils.toChecksumAddress(this.state.inputAddress),
-      }
-      var userListRef = database.ref(addressdatabaseurl)
-      var newUserRef = userListRef.push();
-      newUserRef.set(tokenAddressList);
-      let buffer = ''
-      this.setState({inputAddress : buffer})
-      alert("input successfuly")
-      this.loadAddresses();
-    }
-
     async loadLog(){
       console.log("start load log")
       database.ref(logdatabaseurl + '/').get().then((snapshot) => {
@@ -160,14 +133,8 @@ class Display extends Component {
     }
 
     async start(){
-
-      if(autoAmount !== this.state.autoAmount){
-         this.setState({
-           tabledatas : []
-         })
-      }
-
       let autoAmount =  this.state.autoAmount;
+
       console.log("loan amount " , this.state.autoAmount)
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
         console.log(index)
@@ -176,13 +143,11 @@ class Display extends Component {
         let sushiflag = 1
         let defiflag = 1
       try{
-
         try{
           let tokenContract= new web3.eth.Contract(erc20abi,this.state.tokenAddresses[index]["Address"]);
           tokenName    = await tokenContract.methods.symbol().call().then(function(res) {  return res;  })
           tokenDecimal = await tokenContract.methods.decimals().call()
         }catch(err){}
-        
         
         try{
           let mycontract1  = new web3.eth.Contract(abi, uniswap_address)
@@ -331,10 +296,9 @@ class Display extends Component {
           console.log(err)
           index  =  index
         }
-
-
         if (index ===  this.state.tokenAddresses.length - 1){
           this.start()
+          this.loadAddresses()
         }
       }
     }
@@ -585,14 +549,6 @@ class Display extends Component {
           rows : rowslog
         };
 
-        const handleInputAddress = (e) => {
-          let addLabel  = e.target.value
-          this.setState({
-            inputAddress : addLabel
-          })
-          console.log(this.state.inputAddress)
-        }
-
         const handleAutoProfit = (e) => {
           let addLabel  = e.target.value
           this.setState({
@@ -671,7 +627,7 @@ class Display extends Component {
                            </div>
                            <div className = "col-2">
                                 <Button variant="primary" id="button-addon2"  onClick={()=>this.clearLog()}>
-                                <BsTrash/>  Clear Log History
+                                <BsTrash/>  Clear Log
                                 </Button>
                            </div>
                          </div>
@@ -733,28 +689,7 @@ class Display extends Component {
                             <div className = "col-1"></div>
                           </div><br/><br/>
 
-                          <h2> <FiPlus/>&nbsp; Token Address for listing</h2> <hr/><br/>
-                          <div className= "row">
-                            <div className = "col-1"></div>
-                            <div className = "col-10">
-                              <InputGroup className="mb-3">
-                                <FormControl
-                                  placeholder="Add Token address  "
-                                  aria-label="Recipient's username"
-                                  aria-describedby="basic-addon2"
-                                  defaultValue = {this.state.inputAddress}
-                                  onChange={handleInputAddress}
-                                />
-                                <Button variant="primary" id="button-addon2"  onClick={()=>this.addAddress()}>
-                                <FiPlus/> &nbsp; Add Token Address
-                                </Button>
-                              </InputGroup>
-                              </div>
-                            <div className = "col-1"></div>
-                          </div>
-                          <br/><br/><br/>
-
-                          <h2> <FiCloudLightning/> &nbsp;  auto Trading</h2> <hr/><br/><br/>
+                          <h2> <FiCloudLightning/> &nbsp;  Auto Trading</h2> <hr/><br/><br/>
                           <p  show = {this.state.showstate}>We can execute Arbitrage trading on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
                           <div className= "row">
                           <div className = "col-1"></div>
