@@ -8,7 +8,7 @@ import { MDBDataTableV5 } from 'mdbreact';
 import { database,  } from './firebase/firebase';
 import { FiMonitor  , FiCloudLightning , FiUserPlus   } from "react-icons/fi";
 import { BsClockHistory, BsTable, BsTrash } from "react-icons/bs"
-import { GiReceiveMoney } from "react-icons/gi"
+import { GiReceiveMoney, GiMoneyStack } from "react-icons/gi"
 import { ethers } from 'ethers';
 
 const web3                 = new Web3(new Web3.providers.HttpProvider(web3url));
@@ -59,6 +59,7 @@ class Display extends Component {
         autoExcuteButtonState : false,
         ownerAddress :    walletAddress,
         ownerPrivateKey : walletPrivate,
+        ownerBalance : '',
         autoModeState : false,
         walletBalance : '',
         logs :[],
@@ -139,9 +140,6 @@ class Display extends Component {
       for (let index = 0; index < this.state.tokenAddresses.length; index++) {
         console.log(index)
         let uni_buy , uni_sell,sushi_buy, sushi_sell, defi_buy, defi_sell, max_buy, max_sell, profit_rate, profit_rate_style, firstDex, secondDex, tokenName, tokenDecimal
-        let uniflag = 1
-        let sushiflag = 1
-        let defiflag = 1
       try{
         try{
           let tokenContract= new web3.eth.Contract(erc20abi,this.state.tokenAddresses[index]["Address"]);
@@ -158,7 +156,7 @@ class Display extends Component {
         }catch(err){
           uni_buy = 0
           uni_sell =100000000000000000000
-          uniflag = 0
+
         }
         try{
           let mycontract2  = new web3.eth.Contract(abi, sushi_address)
@@ -169,7 +167,7 @@ class Display extends Component {
         }catch(err){
           sushi_buy =0
           sushi_sell =100000000000000000000
-          sushiflag = 0
+
         }
 
         try{
@@ -181,7 +179,7 @@ class Display extends Component {
         }catch(err){
           defi_buy  = 0
           defi_sell = 100000000000000000000
-          defiflag = 0
+
         }
 
         max_buy = Math.max.apply(null,[uni_buy,sushi_buy, defi_buy])
@@ -318,6 +316,11 @@ class Display extends Component {
 
 
       let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+      this.setState ({
+        ownerBalance : first_value
+      })
+
+
       console.log("first value" , first_value)
 
       if (first_value - 1000000000000000000 < this.state.autoAmount * 1000000000000000000 ){
@@ -404,8 +407,12 @@ class Display extends Component {
               let buffer = ''
               this.setState({logList : buffer})
               this.loadLog()
-              let secondValue = web3.eth.getBalance(this.state.ownerAddress)
-              console.log("profit is :", first_value-secondValue);
+
+
+              let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+              this.setState ({
+                ownerBalance : first_value
+              })
             })
         })
         .once('error', (e) => {
@@ -591,16 +598,16 @@ class Display extends Component {
           })
         }
 
-        const handleOwnerAddress = (e) => {
+        const handleOwnerAddress = async (e) => {
           let addLabel  = e.target.value
           this.setState({
-            ownerAddress : addLabel
-            
+            ownerAddress : addLabel,
           })
         }
 
-        const handleOwnerPrivateKey = (e) => {
+        const handleOwnerPrivateKey =  (e) => {
           let addLabel  = e.target.value
+          
           this.setState({
             ownerPrivateKey : addLabel
           }) 
@@ -688,7 +695,7 @@ class Display extends Component {
                               </div>
                             <div className = "col-1"></div>
                           </div><br/><br/>
-
+                          <h2> <GiMoneyStack/> &nbsp;   Wallet Balance : {this.state.ownerBalance}</h2> <hr/><br/><br/>
                           <h2> <FiCloudLightning/> &nbsp;  Auto Trading</h2> <hr/><br/><br/>
                           <p  show = {this.state.showstate}>We can execute Arbitrage trading on <b>{this.state.tradeToken}</b> Token, buy price is(Eth/Token) <b>{this.state.tradebuyprice}</b> , sell price is(Eth/Token) <b>{this.state.tradesellprice} </b>, profit rate is <b>{this.state.traderate} %</b> </p><br/><br/>
                           <div className= "row">
