@@ -23,7 +23,7 @@ class Display extends Component {
       super(props)
       this.state={
         // capture parameter
-        uni_buy : 0,
+        uni_buy : 0,  
         uni_sell : 0,
         sushi_buy : 0,
         sushi_sell : 0,
@@ -32,11 +32,9 @@ class Display extends Component {
         profit_rate : 0,
         tableDatas : [],
         tableData : [],
-
         // input token
         inputAddress : "",
         tokenAddresses : [],
-
         // trading parameter
         tradeToken : '',
         tradeTokenAddress : '',
@@ -95,7 +93,6 @@ class Display extends Component {
             this.setState({
               tokenAddresses : walletList
             })
-
         }
     }
 
@@ -167,9 +164,7 @@ class Display extends Component {
         }catch(err){
           sushi_buy =0
           sushi_sell =100000000000000000000
-
         }
-
         try{
           let mycontract3  = new web3.eth.Contract(abi, defiswap_address)
           defi_buy      = await mycontract3.methods.getAmountsOut( ethers.BigNumber.from((Math.pow(10, 18) * autoAmount) + '') ,[Eth_address, this.state.tokenAddresses[index]["Address"]]).call();
@@ -208,17 +203,13 @@ class Display extends Component {
         else {
           secondDex = defiswap_address
         }
-
         profit_rate =  Math.round((max_buy - max_sell)/max_buy * 1000000) / 10000
-
          uni_buy   == 0 ? uni_buy = <a className='text-warning'> xxx.xxx </a> : uni_buy = uni_buy
          sushi_buy == 0 ? sushi_buy = <a className='text-warning'> xxx.xxx</a> : sushi_buy = sushi_buy
          defi_buy  == 0 ? defi_buy = <a className='text-warning'> xxx.xxx </a> : defi_buy = defi_buy
-
          uni_sell   == 100000000000000000000 ? uni_sell   = <a className='text-warning'> xxx.xxx </a> : uni_sell = uni_sell 
          sushi_sell == 100000000000000000000 ? sushi_sell = <a className='text-warning'> xxx.xxx </a> : sushi_sell = sushi_sell
          defi_sell  == 100000000000000000000 ? defi_sell  = <a className='text-warning'> xxx.xxx </a> : defi_sell = defi_sell
-
         if (profit_rate > 0 ){
           profit_rate_style =  <a className='text-success'> {profit_rate} </a>
           if (this.state.traderate < profit_rate){
