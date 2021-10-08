@@ -1,4 +1,4 @@
-# BHG-Flash-Swap-bot
+# BHG-Flash-Swap-bot-Ethereum version
 
 This is Multi Dex arbitrage bot between uniswap sushiswap and defiswap.
 ## Usage
