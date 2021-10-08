@@ -71,7 +71,14 @@ class Display extends Component {
     async componentWillMount() {
         await this.loadLog()
         await this.loadAddresses()
+
+        if (this.state.ownerAddress != 0){
+          let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+          this.setState ({
+            ownerBalance :Math.round(first_value / 10000000000000) / 100000 
+          })
     }
+  }
 
     async getPriceData() {
         await this.loadLog()
@@ -303,8 +310,19 @@ class Display extends Component {
       }
     }
 
+
+
+
+
     async manualExcute(){
-      if(this.state.traderate < this.state.autoProfit){
+      let tradeToken = this.state.tradeToken
+      let tradeTokenAddress = this.state.tradeTokenAddress
+      let firstDex = this.state.firstDex
+      let secondDex = this.state.secondDex
+      let tradeRate = this.state.traderate
+
+
+      if(tradeRate< this.state.autoProfit){
         console.log("faild profit")
         return
       }
@@ -326,17 +344,17 @@ class Display extends Component {
         return
       }
       else {
-        console.log("start with :",this.state.tradeToken,this.state.tradeTokenAddress, this.state.autoAmount, this.state.firstDex, this.state.secondDex)
+        console.log("start with :",tradeToken,tradeTokenAddress, this.state.autoAmount, firstDex, secondDex)
 
-        let firstDexContract   = await web3.eth.Contract(abi, this.state.firstDex);
+        let firstDexContract   = await web3.eth.Contract(abi, firstDex);
         this.setState({
           progressbarState : 25,
           progressLabel : 'Buy token'
         })
         let tx = {
           from : this.state.ownerAddress,
-          to   : this.state.firstDex,
-          data : firstDexContract.methods.swapExactETHForTokens(0, [Eth_address, this.state.tradeTokenAddress],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
+          to   : firstDex,
+          data : firstDexContract.methods.swapExactETHForTokens(0, [Eth_address, tradeTokenAddress],this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
           gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
           gas      : this.state.autoGasLimit,
           nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
@@ -354,17 +372,21 @@ class Display extends Component {
         newUserRef.set(basedata);
         
         await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
-          let secondDexContract   = await  web3.eth.Contract(abi, this.state.secondDex);
-          let tokenContract       = await  web3.eth.Contract(erc20abi, this.state.tradeTokenAddress);
+          let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+          this.setState ({
+            ownerBalance :Math.round(first_value / 10000000000000) / 100000 
+          })
+          let secondDexContract   = await  web3.eth.Contract(abi, secondDex);
+          let tokenContract       = await  web3.eth.Contract(erc20abi, tradeTokenAddress);
           let tokenBalance        = await  tokenContract.methods.balanceOf(this.state.ownerAddress).call()
-          let allowanceAmount     = await  tokenContract.methods.allowance(this.state.ownerAddress, this.state.secondDex).call()
+          let allowanceAmount     = await  tokenContract.methods.allowance(this.state.ownerAddress, secondDex).call()
         
           if (allowanceAmount/1 < tokenBalance/1) {
             console.log('here is a approve')
               let tx = {
                 from : this.state.ownerAddress,
-                to   : this.state.tradeTokenAddress,
-                data : tokenContract.methods.approve(this.state.secondDex, ethers.BigNumber.from('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')).encodeABI(),
+                to   : tradeTokenAddress,
+                data : tokenContract.methods.approve(secondDex, ethers.BigNumber.from('0xffffffffffffffff')).encodeABI(),
                 gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
                 gas      : this.state.autoGasLimit,
                 nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
@@ -373,14 +395,18 @@ class Display extends Component {
               await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
                 let tx = {
                   from : this.state.ownerAddress,
-                  to   : this.state.secondDex,
-                  data : secondDexContract.methods.swapExactTokensForETH(ethers.BigNumber.from((tokenBalance/1)+'') ,0, [this.state.tradeTokenAddress,Eth_address ], this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
+                  to   : secondDex,
+                  data : secondDexContract.methods.swapExactTokensForETH(ethers.BigNumber.from((tokenBalance)+ '') ,0, [tradeTokenAddress,Eth_address ], this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
                   gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
                   gas      : this.state.autoGasLimit,
                   nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
                 }
                 const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
                 await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
+                  let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+                  this.setState ({
+                    ownerBalance :Math.round(first_value / 10000000000000) / 100000 
+                  })
                   this.setState({
                     progressbarState : 50,
                     progressLabel : 'Token is approved'
@@ -388,10 +414,10 @@ class Display extends Component {
                   const logList= {
                     timeStamp  : new Date().toISOString(),
                     autoAmount : this.state.autoAmount,
-                    tradeToken : this.state.tradeToken,
-                    tradeRate  : this.state.traderate,
-                    firstDex     : this.state.firstDex,
-                    secondDex    : this.state.secondDex,
+                    tradeToken : tradeToken,
+                    tradeRate  : tradeRate,
+                    firstDex     : firstDex,
+                    secondDex    : secondDex,
                   }
                   this.setState({
                     progressbarState : 75,
@@ -410,12 +436,16 @@ class Display extends Component {
                     progressLabel : 'Complete'
                   })
 
-                  let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+                  first_value =await  web3.eth.getBalance(this.state.ownerAddress)
                   this.setState ({
                     ownerBalance :Math.round(first_value / 10000000000000) / 100000 
                   })
-                })
+                }).once('error', (e) => {
+                  console.log('here is 1', e)
               })
+              }).once('error', (e) => {
+                console.log('here is 2',e)
+            })
           }
 
           else {
@@ -423,10 +453,11 @@ class Display extends Component {
               progressbarState : 50,
               progressLabel : 'Token is approved'
             })
+
             let tx = {
               from : this.state.ownerAddress,
-              to   : this.state.secondDex,
-              data : secondDexContract.methods.swapExactTokensForETH(ethers.BigNumber.from((tokenBalance/1)+'') ,0, [this.state.tradeTokenAddress,Eth_address ], this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
+              to   : secondDex,
+              data : secondDexContract.methods.swapExactTokensForETH(ethers.BigNumber.from((tokenBalance) + '') ,0, [tradeTokenAddress,Eth_address ], this.state.ownerAddress, Date.now() + 1000 * 60 * 10).encodeABI(),
               gasPrice : web3.utils.toWei(this.state.autoGasValue, 'Gwei'),
               gas      : this.state.autoGasLimit,
               nonce    : await web3.eth.getTransactionCount(this.state.ownerAddress),
@@ -434,14 +465,18 @@ class Display extends Component {
             const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
 
             await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
+              let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+              this.setState ({
+                ownerBalance :Math.round(first_value / 10000000000000) / 100000 
+              })
               console.log('successful')
               const logList= {
                 timeStamp  : new Date().toISOString(),
                 autoAmount : this.state.autoAmount,
-                tradeToken : this.state.tradeToken,
-                tradeRate  : this.state.traderate,
-                firstDex     : this.state.firstDex,
-                secondDex    : this.state.secondDex,
+                tradeToken : tradeToken,
+                tradeRate  : tradeRate,
+                firstDex     : firstDex,
+                secondDex    : secondDex,
               }
 
               this.setState({
@@ -462,11 +497,13 @@ class Display extends Component {
               })
 
 
-              let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
+             first_value =await  web3.eth.getBalance(this.state.ownerAddress)
               this.setState ({
                 ownerBalance :Math.round(first_value / 10000000000000) / 100000 
               })
-            })
+            }).once('error', (e) => {
+              console.log('here is 3',e)
+          })
           }
         })
         .once('error', (e) => {
@@ -502,7 +539,7 @@ class Display extends Component {
         modalShowState : false,
         autoProfit : 0.1,
         autoAmount : 1,
-        autoTime   : 60000,
+        autoTime   : 30000,
         autoSlippage  : 100,
         autoGasLimit  : 500000,
         autoGasValue  : 40,
@@ -514,7 +551,7 @@ class Display extends Component {
         autoExcuteButtonState : false,
         autoProfit    : 0.1,
         autoAmount    : 1,
-        autoTime      : 60000,
+        autoTime      : 30000,
         autoSlippage  : 100,
         autoGasLimit  : 500000,
         autoGasValue  : 40,
