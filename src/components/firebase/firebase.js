@@ -1,23 +1,22 @@
-import firebase from 'firebase';
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyAQ7xkSsvcDP8a1dDjnxIh8H-4MsQdxrIw",
-  authDomain: "flashloan-abitrage.firebaseapp.com",
-  databaseURL: "https://flashloan-abitrage-default-rtdb.firebaseio.com",
-  projectId: "flashloan-abitrage",
-  storageBucket: "flashloan-abitrage.appspot.com",
-  messagingSenderId: "223465919182",
-  appId: "1:223465919182:web:b894c3c0c0fb886391769f",
-  measurementId: "G-CF50P6X57S"
+  apiKey: "AIzaSyBI1WF0GvrC8IqFaa6bPZmpSzejJJ1pfb8",
+  authDomain: "front-run-bot.firebaseapp.com",
+  databaseURL: "https://front-run-bot-default-rtdb.firebaseio.com",
+  projectId: "front-run-bot",
+  storageBucket: "front-run-bot.appspot.com",
+  messagingSenderId: "512648242141",
+  appId: "1:512648242141:web:3449a9f38ce1d00f0c0c34",
+  measurementId: "G-GNPS4GLDHP"
 };
 
-firebase.initializeApp(firebaseConfig);
-firebase.analytics();
-
-export default firebase;
-
-export const database = firebase.database();
-export const auth = firebase.auth();
-export const storage = firebase.storage();
-export const googleAuthProvider = new firebase.auth.GoogleAuthProvider();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
