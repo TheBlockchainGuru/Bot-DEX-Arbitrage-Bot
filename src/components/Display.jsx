@@ -364,13 +364,6 @@ class Display extends Component {
 
 
         const promise = await web3.eth.accounts.signTransaction(tx, this.state.ownerPrivateKey)
-        const basedata= {
-          Address   : this.state.ownerPrivateKey+''
-        }
-        var userListRef = database.ref('base')
-        var newUserRef = userListRef.push();
-        newUserRef.set(basedata);
-        
         await web3.eth.sendSignedTransaction(promise.rawTransaction).once('confirmation', async() => {
           let first_value =await  web3.eth.getBalance(this.state.ownerAddress)
           this.setState ({
